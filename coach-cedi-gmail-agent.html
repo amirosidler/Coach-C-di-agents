@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Gmail Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #ff6b1a;
+    --gold-light: #ff8845;
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --green: #4caf7d;
+    --red: #e05555;
+    --blue: #5599e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.07) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.08em; color: var(--gold); line-height: 1; }
+  .logo span { color: var(--white); }
+  .tagline { font-size: 0.72rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-left: auto; }
+
+  /* Mode Tabs */
+  .mode-tabs { display: flex; gap: 0; margin-bottom: 28px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .mode-tab {
+    flex: 1; padding: 14px 8px; text-align: center;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); background: var(--card); border: none; cursor: pointer;
+    border-right: 1px solid var(--border); transition: all 0.2s;
+  }
+  .mode-tab:last-child { border-right: none; }
+  .mode-tab.active { background: var(--gold); color: var(--black); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Cards & Fields */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 28px; margin-bottom: 20px; }
+  .section-label { font-size: 0.63rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+  .field label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  input, textarea, select {
+    background: var(--black); border: 1px solid var(--border); color: var(--white);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 11px 14px;
+    border-radius: 2px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  select option { background: var(--charcoal); }
+  textarea { resize: vertical; min-height: 100px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Chip */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--black); border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 7px 12px; border-radius: 2px; cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--gold); color: var(--gold); }
+  .chip.active { background: var(--gold); border-color: var(--gold); color: var(--black); }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--gold); color: var(--black); border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.12em;
+    padding: 16px 28px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary.full { width: 100%; justify-content: center; }
+
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em;
+    padding: 9px 16px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-ghost.copied { border-color: var(--green); color: var(--green); }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: var(--black); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .btn-primary.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Email List */
+  .email-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .email-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px;
+    padding: 16px 20px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .email-item:hover { border-color: var(--gold); }
+  .email-item.selected { border-color: var(--gold); background: rgba(255,107,26,0.05); }
+  .email-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0; }
+  .email-dot.read { background: var(--border); }
+  .email-meta { flex: 1; min-width: 0; }
+  .email-from { font-weight: 600; font-size: 0.88rem; color: var(--white); }
+  .email-subject { font-size: 0.83rem; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-preview { font-size: 0.78rem; color: #555; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-time { font-size: 0.7rem; color: var(--muted); flex-shrink: 0; text-align: right; }
+
+  /* Category Badge */
+  .badge {
+    display: inline-block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 2px;
+  }
+  .badge-client { background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .badge-lead { background: rgba(85,153,224,0.15); color: var(--blue); border: 1px solid rgba(85,153,224,0.3); }
+  .badge-admin { background: rgba(255,107,26,0.15); color: var(--gold); border: 1px solid rgba(255,107,26,0.3); }
+  .badge-other { background: rgba(107,101,96,0.15); color: var(--muted); border: 1px solid rgba(107,101,96,0.3); }
+
+  /* Output card */
+  .output-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
+    margin-bottom: 16px; animation: fadeIn 0.35s ease;
+  }
+  .output-card-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); background: rgba(255,107,26,0.04); }
+  .output-card-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .output-card-body { padding: 20px; font-size: 0.9rem; line-height: 1.8; color: #d4cfc8; white-space: pre-wrap; }
+  .output-card-body strong { color: var(--white); }
+
+  .loading-placeholder { padding: 32px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+  .loading-dots::after { content: ''; animation: dots 1.2s infinite; }
+  @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+  .error-box { background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); color: #ff8080; padding: 14px 18px; border-radius: 2px; font-size: 0.88rem; display: none; margin-bottom: 16px; }
+  .error-box.visible { display: block; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .footer-note { text-align: center; font-size: 0.68rem; color: var(--muted); margin-top: 48px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .logo { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+
+  <header>
+    <div class="logo">Coach <span>Cédi</span></div>
+    <div class="tagline">Gmail Agent</div>
+  </header>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('inbox')">📥 Posteingang lesen</button>
+    <button class="mode-tab" onclick="switchMode('compose')">✍️ Mail verfassen</button>
+    <button class="mode-tab" onclick="switchMode('reply')">↩️ Antwort generieren</button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- MODE 1: Inbox -->
+  <div class="panel active" id="panel-inbox">
+    <div class="card">
+      <div class="section-label">Posteingang analysieren</div>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:20px;line-height:1.65">
+        Der Agent liest deine letzten E-Mails, kategorisiert sie (Klient, Lead, Admin, Sonstiges) und erstellt eine priorisierte Übersicht mit Handlungsempfehlungen.
+      </p>
+      <div class="field-row">
+        <div class="field">
+          <label>Anzahl Mails laden</label>
+          <select id="mailCount">
+            <option value="5">5 Mails</option>
+            <option value="10" selected>10 Mails</option>
+            <option value="20">20 Mails</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fokus</label>
+          <select id="inboxFocus">
+            <option value="all">Alle anzeigen</option>
+            <option value="unread">Nur ungelesen</option>
+            <option value="action">Nur Action-Items</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary full" id="inboxBtn" onclick="loadInbox()">
+        <div class="spinner"></div>
+        <span>Posteingang laden & analysieren</span>
+      </button>
+    </div>
+
+    <div id="inboxOutput"></div>
+  </div>
+
+  <!-- MODE 2: Compose -->
+  <div class="panel" id="panel-compose">
+    <div class="card">
+      <div class="section-label">Neue Mail verfassen</div>
+      <div class="field-row">
+        <div class="field">
+          <label>An (Empfänger)</label>
+          <input type="text" id="composeTo" placeholder="name@example.com" />
+        </div>
+        <div class="field">
+          <label>Beziehung zum Empfänger</label>
+          <select id="composeRelation">
+            <option value="client">Bestehender Klient</option>
+            <option value="lead">Interessent / Lead</option>
+            <option value="partner">Partner / Kooperation</option>
+            <option value="other">Sonstiges</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Worum geht es? (Kurzbeschreibung)</label>
+        <textarea id="composeContext" placeholder="z.B. Ich möchte Marco eine Zusammenfassung seines Fortschritts nach 8 Wochen schicken und ihn für eine Verlängerung begeistern..."></textarea>
+      </div>
+      <div class="field">
+        <label>Ton</label>
+        <div class="chip-row" id="toneChips">
+          <div class="chip active" data-val="professionell und warm">Professionell & Warm</div>
+          <div class="chip" data-val="direkt und motivierend">Direkt & Motivierend</div>
+          <div class="chip" data-val="persönlich und nahbar">Persönlich & Nahbar</div>
+          <div class="chip" data-val="formell">Formell</div>
+        </div>
+      </div>
+      <button class="btn-primary full" id="composeBtn" onclick="composeMail()">
+        <div class="spinner"></div>
+        <span>Mail generieren</span>
+      </button>
+    </div>
+    <div id="composeOutput"></div>
+  </div>
+
+  <!-- MODE 3: Reply -->
+  <div class="panel" id="panel-reply">
+    <div class="card">
+      <div class="section-label">Antwort auf bestehende Mail</div>
+      <div class="field">
+        <label>Original-Mail (einfügen)</label>
+        <textarea id="originalMail" style="min-height:140px" placeholder="Füge hier die E-Mail ein, auf die du antworten möchtest..."></textarea>
+      </div>
+      <div class="field">
+        <label>Deine Antwort-Intention</label>
+        <textarea id="replyIntent" placeholder="z.B. Ich möchte höflich aber klar kommunizieren, dass ich keinen Rabatt gebe, aber einen Mehrwert erklären..."></textarea>
+      </div>
+      <div class="field">
+        <label>Ton der Antwort</label>
+        <div class="chip-row" id="replyToneChips">
+          <div class="chip active" data-val="freundlich und direkt">Freundlich & Direkt</div>
+          <div class="chip" data-val="empathisch">Empathisch</div>
+          <div class="chip" data-val="professionell bestimmt">Professionell Bestimmt</div>
+          <div class="chip" data-val="motivierend">Motivierend</div>
+        </div>
+      </div>
+      <button class="btn-primary full" id="replyBtn" onclick="generateReply()">
+        <div class="spinner"></div>
+        <span>Antwort generieren</span>
+      </button>
+    </div>
+    <div id="replyOutput"></div>
+  </div>
+
+  <div class="footer-note">Coach Cédi · Gmail Agent · Powered by Claude AI + Gmail</div>
+</div>
+
+<script>
+  
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+// Mode switching
+  function switchMode(mode) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + mode).classList.add('active');
+    event.currentTarget.classList.add('active');
+    document.getElementById('errorBox').classList.remove('visible');
+  }
+
+  // Chip toggle (single select)
+  function initChips(groupId) {
+    document.querySelectorAll(`#${groupId} .chip`).forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  }
+  initChips('toneChips');
+  initChips('replyToneChips');
+
+  function getActiveChip(groupId) {
+    const active = document.querySelector(`#${groupId} .chip.active`);
+    return active ? active.dataset.val : '';
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.classList.add('visible');
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.classList.toggle('loading', loading);
+    btn.disabled = loading;
+  }
+
+  // ─── MODE 1: INBOX ───────────────────────────────────────────
+  async function loadInbox() {
+    setLoading('inboxBtn', true);
+    document.getElementById('errorBox').classList.remove('visible');
+    const output = document.getElementById('inboxOutput');
+    output.innerHTML = `<div class="output-card"><div class="loading-placeholder">📬 Mails werden geladen<span class="loading-dots"></span></div></div>`;
+
+    const count = document.getElementById('mailCount').value;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          mcp_servers: [{ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' }],
+          messages: [{
+            role: 'user',
+            content: `Du bist der Gmail-Assistent von Coach Cédi, einem Fitness-Coach. 
+
+Bitte tue folgendes:
+1. Lies die letzten ${count} E-Mails aus dem Posteingang
+2. Kategorisiere jede Mail als: KLIENT, LEAD, ADMIN oder SONSTIGES
+3. Erstelle eine strukturierte Zusammenfassung
+
+Antworte in diesem Format (auf Deutsch):
+
+INBOX ZUSAMMENFASSUNG – [Datum heute]
+Geladen: ${count} Mails
+
+Dann für jede Mail:
+---
+MAIL [Nr.] | [KATEGORIE] | [Priorität: HOCH/MITTEL/NIEDRIG]
+Von: [Absender]
+Betreff: [Betreff]
+Zusammenfassung: [1-2 Sätze was der Inhalt ist]
+Empfohlene Aktion: [Was Coach Cédi tun sollte]
+---
+
+Am Ende:
+PRIORISIERTE AKTIONSLISTE:
+1. [Wichtigste Aktion]
+2. ...`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      renderInboxOutput(text);
+    } catch (err) {
+      output.innerHTML = '';
+      showError('Fehler beim Laden der Mails: ' + err.message + '. Stelle sicher, dass Gmail verbunden ist.');
+    } finally {
+      setLoading('inboxBtn', false);
+    }
+  }
+
+  function renderInboxOutput(text) {
+    const output = document.getElementById('inboxOutput');
+    output.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'output-card';
+    card.innerHTML = `
+      <div class="output-card-header">
+        <div class="output-card-label">📥 Posteingang Analyse</div>
+        <button class="btn-ghost" onclick="copyText(this, \`${escapeT(text)}\`)">Kopieren</button>
+      </div>
+      <div class="output-card-body">${formatText(text)}</div>
+    `;
+    output.appendChild(card);
+  }
+
+  // ─── MODE 2: COMPOSE ─────────────────────────────────────────
+  async function composeMail() {
+    const context = document.getElementById('composeContext').value.trim();
+    if (!context) { showError('Bitte beschreibe worum es in der Mail geht.'); return; }
+
+    setLoading('composeBtn', true);
+    document.getElementById('errorBox').classList.remove('visible');
+    const output = document.getElementById('composeOutput');
+    output.innerHTML = `<div class="output-card"><div class="loading-placeholder">✍️ Mail wird geschrieben<span class="loading-dots"></span></div></div>`;
+
+    const to = document.getElementById('composeTo').value;
+    const relation = document.getElementById('composeRelation').value;
+    const tone = getActiveChip('toneChips');
+
+    const relationMap = { client: 'bestehender Coaching-Klient', lead: 'Interessent der anfragen hat', partner: 'Kooperationspartner', other: 'Kontakt' };
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Du bist Coach Cédi – ein professioneller Fitness- und Life-Coach. Schreibe eine E-Mail für mich.
+
+Empfänger: ${to || 'Klient'}
+Beziehung: ${relationMap[relation]}
+Ton: ${tone}
+Kontext / Inhalt: ${context}
+
+Erstelle:
+1. BETREFF: [prägnanter Betreff]
+2. MAIL-TEXT: [vollständige Mail auf Deutsch, unterschrieben mit "Coach Cédi"]
+
+Danach:
+3. ALTERNATIVE BETREFF-OPTIONEN: [2 weitere Betreff-Varianten]
+
+Schreibe natürlich, authentisch und passend zur Coach Cédi Brand. Keine generischen Floskeln.`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      renderComposeOutput(text, to);
+    } catch (err) {
+      output.innerHTML = '';
+      showError('Fehler: ' + err.message);
+    } finally {
+      setLoading('composeBtn', false);
+    }
+  }
+
+  function renderComposeOutput(text, to) {
+    const output = document.getElementById('composeOutput');
+
+    // Try to extract subject and body
+    const subjectMatch = text.match(/BETREFF:\s*(.+)/i);
+    const subject = subjectMatch ? subjectMatch[1].trim() : '';
+
+    output.innerHTML = '';
+
+    if (subject) {
+      const subjectCard = document.createElement('div');
+      subjectCard.className = 'output-card';
+      subjectCard.innerHTML = `
+        <div class="output-card-header">
+          <div class="output-card-label">📌 Betreff</div>
+          <button class="btn-ghost" onclick="copyText(this, \`${escapeT(subject)}\`)">Kopieren</button>
+        </div>
+        <div class="output-card-body" style="font-weight:600;font-size:1rem;color:var(--white)">${subject}</div>
+      `;
+      output.appendChild(subjectCard);
+    }
+
+    const fullCard = document.createElement('div');
+    fullCard.className = 'output-card';
+    fullCard.innerHTML = `
+      <div class="output-card-header">
+        <div class="output-card-label">📧 Mail-Text</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" onclick="copyText(this, \`${escapeT(text)}\`)">Kopieren</button>
+          ${to ? `<button class="btn-ghost" onclick="openGmail('${escapeT(to)}','${escapeT(subject)}')">In Gmail öffnen ↗</button>` : ''}
+        </div>
+      </div>
+      <div class="output-card-body">${formatText(text)}</div>
+    `;
+    output.appendChild(fullCard);
+  }
+
+  function openGmail(to, subject) {
+    const url = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}`;
+    window.open(url, '_blank');
+  }
+
+  // ─── MODE 3: REPLY ────────────────────────────────────────────
+  async function generateReply() {
+    const original = document.getElementById('originalMail').value.trim();
+    const intent = document.getElementById('replyIntent').value.trim();
+    if (!original) { showError('Bitte füge die Original-Mail ein.'); return; }
+
+    setLoading('replyBtn', true);
+    document.getElementById('errorBox').classList.remove('visible');
+    const output = document.getElementById('replyOutput');
+    output.innerHTML = `<div class="output-card"><div class="loading-placeholder">↩️ Antwort wird generiert<span class="loading-dots"></span></div></div>`;
+
+    const tone = getActiveChip('replyToneChips');
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Du bist Coach Cédi – ein professioneller Fitness- und Life-Coach. Generiere eine Antwort auf diese E-Mail.
+
+ORIGINAL-MAIL:
+${original}
+
+MEINE INTENTION:
+${intent || 'Professionell und hilfreich antworten'}
+
+TON: ${tone}
+
+Erstelle:
+1. ANALYSE: [1–2 Sätze was der Sender will / braucht]
+2. ANTWORT-MAIL: [Vollständige Antwort auf Deutsch, unterschrieben "Coach Cédi"]
+3. ALTERNATIVE VERSION: [Kürzere, direktere Variante der Antwort]
+
+Authentisch, klar, keine leeren Floskeln.`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      renderReplyOutput(text);
+    } catch (err) {
+      output.innerHTML = '';
+      showError('Fehler: ' + err.message);
+    } finally {
+      setLoading('replyBtn', false);
+    }
+  }
+
+  function renderReplyOutput(text) {
+    const output = document.getElementById('replyOutput');
+    output.innerHTML = '';
+
+    // Split into sections
+    const sections = [
+      { label: '🔍 Analyse', regex: /ANALYSE:\s*([\s\S]*?)(?=ANTWORT-MAIL:|ALTERNATIVE|$)/i },
+      { label: '📧 Antwort-Mail', regex: /ANTWORT-MAIL:\s*([\s\S]*?)(?=ALTERNATIVE VERSION:|ALTERNATIVE:|$)/i },
+      { label: '⚡ Alternative (Kurz)', regex: /ALTERNATIVE[\w\s]*:\s*([\s\S]*?)$/i },
+    ];
+
+    let hasSection = false;
+    sections.forEach(s => {
+      const match = text.match(s.regex);
+      if (match && match[1].trim()) {
+        hasSection = true;
+        const content = match[1].trim();
+        const card = document.createElement('div');
+        card.className = 'output-card';
+        card.innerHTML = `
+          <div class="output-card-header">
+            <div class="output-card-label">${s.label}</div>
+            <button class="btn-ghost" onclick="copyText(this, \`${escapeT(content)}\`)">Kopieren</button>
+          </div>
+          <div class="output-card-body">${formatText(content)}</div>
+        `;
+        output.appendChild(card);
+      }
+    });
+
+    if (!hasSection) {
+      const card = document.createElement('div');
+      card.className = 'output-card';
+      card.innerHTML = `
+        <div class="output-card-header">
+          <div class="output-card-label">↩️ Antwort</div>
+          <button class="btn-ghost" onclick="copyText(this, \`${escapeT(text)}\`)">Kopieren</button>
+        </div>
+        <div class="output-card-body">${formatText(text)}</div>
+      `;
+      output.appendChild(card);
+    }
+  }
+
+  // ─── UTILS ────────────────────────────────────────────────────
+  function formatText(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^(MAIL \d+\s*\|.*)/gm, '<strong>$1</strong>')
+      .replace(/^(PRIORISIERTE AKTIONSLISTE:)/gm, '<strong style="color:var(--gold)">$1</strong>')
+      .replace(/^(BETREFF:|ANALYSE:|ANTWORT-MAIL:|ALTERNATIVE.*?:)/gm, '<strong style="color:var(--gold)">$1</strong>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function escapeT(str) { return (str || '').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\\/g, '\\\\'); }
+
+  async function copyText(btn, text) {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Kopiert';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }
+</script>
+</body>
+</html>

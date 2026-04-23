@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Check-in Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #ff6b1a;
+    --gold-light: #ff8845;
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --green: #4caf7d;
+    --red: #e05555;
+    --blue: #5599e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.07) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 24px;
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.08em; color: var(--gold); line-height: 1; }
+  .logo span { color: var(--white); }
+  .tagline { font-size: 0.72rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-left: auto; }
+
+  /* Steps Nav */
+  .steps-nav {
+    display: flex; gap: 0; margin-bottom: 36px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .step-tab {
+    flex: 1; padding: 12px 8px; text-align: center;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); background: var(--card); border: none; cursor: pointer;
+    border-right: 1px solid var(--border); transition: all 0.2s;
+  }
+  .step-tab:last-child { border-right: none; }
+  .step-tab.active { background: var(--gold); color: var(--black); }
+  .step-tab.done { color: var(--green); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Cards & Fields */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 28px; margin-bottom: 20px;
+  }
+  .section-label {
+    font-size: 0.63rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
+  }
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+  .field label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  input, textarea, select {
+    background: var(--black); border: 1px solid var(--border); color: var(--white);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 11px 14px; border-radius: 2px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  select option { background: var(--charcoal); }
+  textarea { resize: vertical; min-height: 90px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Slider */
+  .slider-field { margin-bottom: 16px; }
+  .slider-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .slider-value { font-size: 0.9rem; font-weight: 700; color: var(--gold); min-width: 24px; text-align: right; }
+  input[type=range] {
+    -webkit-appearance: none; background: var(--border); height: 4px; border-radius: 2px; padding: 0; border: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); cursor: pointer;
+  }
+
+  /* Emoji Rating */
+  .emoji-row { display: flex; gap: 10px; }
+  .emoji-btn {
+    flex: 1; background: var(--black); border: 1px solid var(--border); border-radius: 2px;
+    padding: 10px 4px; font-size: 1.3rem; cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .emoji-btn.selected { border-color: var(--gold); background: rgba(255,107,26,0.1); }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--gold); color: var(--black); border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.12em;
+    padding: 16px 32px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em;
+    padding: 12px 20px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+  .btn-row { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: var(--black);
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+  }
+  .btn-primary.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Output */
+  .output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .metric-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 20px;
+    animation: fadeIn 0.4s ease forwards; opacity: 0;
+  }
+  .metric-label { font-size: 0.63rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .metric-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.05em; line-height: 1; }
+  .metric-value.good { color: var(--green); }
+  .metric-value.warn { color: var(--gold); }
+  .metric-value.bad { color: var(--red); }
+
+  .feedback-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
+    margin-bottom: 16px; animation: fadeIn 0.4s ease forwards; opacity: 0;
+  }
+  .feedback-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px; border-bottom: 1px solid var(--border); background: rgba(255,107,26,0.04);
+  }
+  .feedback-type { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .copy-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.7rem; padding: 5px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+  .feedback-body { padding: 20px; font-size: 0.9rem; line-height: 1.8; color: #d4cfc8; white-space: pre-wrap; }
+  .feedback-body strong { color: var(--white); font-weight: 600; }
+
+  .status-badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 2px;
+  }
+  .badge-green { background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .badge-gold { background: rgba(255,107,26,0.15); color: var(--gold); border: 1px solid rgba(255,107,26,0.3); }
+  .badge-red { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
+
+  .error-box {
+    background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); color: #ff8080;
+    padding: 14px 18px; border-radius: 2px; font-size: 0.88rem; display: none; margin-bottom: 16px;
+  }
+  .error-box.visible { display: block; }
+
+  .footer-note { text-align: center; font-size: 0.68rem; color: var(--muted); margin-top: 48px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    .field-row, .field-row-3, .output-grid { grid-template-columns: 1fr; }
+    .logo { font-size: 2rem; }
+    .steps-nav { flex-wrap: wrap; }
+    .step-tab { flex: none; width: 50%; border-right: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+
+  <header>
+    <div class="logo">Coach <span>Cédi</span></div>
+    <div class="tagline">Client Check-in Agent</div>
+  </header>
+
+  <div class="steps-nav">
+    <button class="step-tab active" data-step="0" onclick="goStep(0)">① Klient</button>
+    <button class="step-tab" data-step="1" onclick="goStep(1)">② Training</button>
+    <button class="step-tab" data-step="2" onclick="goStep(2)">③ Ernährung</button>
+    <button class="step-tab" data-step="3" onclick="goStep(3)">④ Mental</button>
+    <button class="step-tab" data-step="4" onclick="goStep(4)">⑤ Feedback</button>
+  </div>
+
+  <!-- Step 0: Client Info -->
+  <div class="panel active" id="step-0">
+    <div class="card">
+      <div class="section-label">Klient Grunddaten</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Name des Klienten</label>
+          <input type="text" id="clientName" placeholder="z.B. Marco Bauer" />
+        </div>
+        <div class="field">
+          <label>Check-in Woche</label>
+          <input type="text" id="weekLabel" placeholder="z.B. KW 14 / Woche 6" />
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Ziel</label>
+          <select id="clientGoal">
+            <option value="fatloss">Fettabbau</option>
+            <option value="muscle">Muskelaufbau</option>
+            <option value="recomp">Rekomposition</option>
+            <option value="performance">Performance</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Coaching-Phase</label>
+          <select id="phase">
+            <option value="start">Startphase (1–4 Wo.)</option>
+            <option value="mid">Aufbauphase (5–12 Wo.)</option>
+            <option value="advanced">Fortgeschritten (12+ Wo.)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Aktuelles Gewicht (kg)</label>
+          <input type="number" id="weight" placeholder="82.5" step="0.1" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Gewichtsveränderung diese Woche</label>
+        <input type="text" id="weightChange" placeholder="z.B. -0.6 kg / +0.3 kg / gleich" />
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="goStep(1)">Weiter →</button>
+    </div>
+  </div>
+
+  <!-- Step 1: Training -->
+  <div class="panel" id="step-1">
+    <div class="card">
+      <div class="section-label">Training diese Woche</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Absolvierte Einheiten</label>
+          <input type="text" id="trainingSessions" placeholder="z.B. 3 von 4 geplant" />
+        </div>
+        <div class="field">
+          <label>Trainingszeit (Ø Minuten)</label>
+          <input type="number" id="trainingDuration" placeholder="60" />
+        </div>
+      </div>
+      <div class="slider-field">
+        <div class="slider-label-row">
+          <span class="slider-label">Intensität / Effort</span>
+          <span class="slider-value" id="intensityVal">7</span>/10
+        </div>
+        <input type="range" min="1" max="10" value="7" id="intensity" oninput="document.getElementById('intensityVal').textContent=this.value" />
+      </div>
+      <div class="field">
+        <label>Was lief gut?</label>
+        <textarea id="trainingGood" placeholder="z.B. Bankdrücken neues Gewicht geschafft, Energie war top..."></textarea>
+      </div>
+      <div class="field">
+        <label>Was lief schlecht / was wurde ausgelassen?</label>
+        <textarea id="trainingBad" placeholder="z.B. Mittwoch Training verpasst wegen Überstunden..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(0)">← Zurück</button>
+      <button class="btn-primary" onclick="goStep(2)">Weiter →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Ernährung -->
+  <div class="panel" id="step-2">
+    <div class="card">
+      <div class="section-label">Ernährung</div>
+      <div class="slider-field">
+        <div class="slider-label-row">
+          <span class="slider-label">Plan-Adherence (Ernährung)</span>
+          <span class="slider-value" id="nutritionVal">75</span>%
+        </div>
+        <input type="range" min="0" max="100" step="5" value="75" id="nutritionAdherence" oninput="document.getElementById('nutritionVal').textContent=this.value" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Ø Kalorien/Tag (geschätzt)</label>
+          <input type="number" id="calories" placeholder="2200" />
+        </div>
+        <div class="field">
+          <label>Ø Protein/Tag (g)</label>
+          <input type="number" id="protein" placeholder="160" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Grösste Herausforderungen Ernährung</label>
+        <textarea id="nutritionChallenges" placeholder="z.B. Freitagabend Party, Mittagessen im Büro schwierig..."></textarea>
+      </div>
+      <div class="field">
+        <label>Positive Ernährungsmomente</label>
+        <textarea id="nutritionWins" placeholder="z.B. Meal Prep Sonntag gut geklappt, weniger Snacks abends..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Zurück</button>
+      <button class="btn-primary" onclick="goStep(3)">Weiter →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Mental -->
+  <div class="panel" id="step-3">
+    <div class="card">
+      <div class="section-label">Mentale & Lifestyle Faktoren</div>
+      <div class="field">
+        <label>Allgemeine Stimmung diese Woche</label>
+        <div class="emoji-row" id="moodRow">
+          <button class="emoji-btn" onclick="selectEmoji('mood','😤','Gestresst')">😤<br><small>Gestresst</small></button>
+          <button class="emoji-btn" onclick="selectEmoji('mood','😔','Demotiviert')">😔<br><small>Demotiviert</small></button>
+          <button class="emoji-btn" onclick="selectEmoji('mood','😐','Neutral')">😐<br><small>Neutral</small></button>
+          <button class="emoji-btn" onclick="selectEmoji('mood','😊','Gut')">😊<br><small>Gut</small></button>
+          <button class="emoji-btn" onclick="selectEmoji('mood','🔥','Top')">🔥<br><small>Top</small></button>
+        </div>
+      </div>
+      <div class="slider-field" style="margin-top:16px">
+        <div class="slider-label-row">
+          <span class="slider-label">Schlafqualität</span>
+          <span class="slider-value" id="sleepVal">7</span>/10
+        </div>
+        <input type="range" min="1" max="10" value="7" id="sleep" oninput="document.getElementById('sleepVal').textContent=this.value" />
+      </div>
+      <div class="slider-field">
+        <div class="slider-label-row">
+          <span class="slider-label">Stresslevel (Beruf/Alltag)</span>
+          <span class="slider-value" id="stressVal">5</span>/10
+        </div>
+        <input type="range" min="1" max="10" value="5" id="stress" oninput="document.getElementById('stressVal').textContent=this.value" />
+      </div>
+      <div class="field">
+        <label>Was hat dich diese Woche am meisten gechallengt?</label>
+        <textarea id="biggestChallenge" placeholder="z.B. Reise für Arbeit, wenig Schlaf, Motivationstief..."></textarea>
+      </div>
+      <div class="field">
+        <label>Grösster Erfolg / Highlight der Woche</label>
+        <textarea id="biggestWin" placeholder="z.B. Erstmals 100kg Kniebeuge, Hose passt wieder..."></textarea>
+      </div>
+      <div class="field">
+        <label>Fragen / Wünsche an Coach Cédi</label>
+        <textarea id="clientQuestions" placeholder="z.B. Kann ich Freitag das Training verschieben? Soll ich die Kalorien erhöhen?"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Zurück</button>
+      <button class="btn-primary" id="analyzeBtn" onclick="analyzeCheckin()">
+        <div class="spinner"></div>
+        <span>Feedback generieren</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 4: Output -->
+  <div class="panel" id="step-4">
+    <div class="error-box" id="errorBox"></div>
+
+    <div id="metricsGrid" class="output-grid"></div>
+    <div id="feedbackCards"></div>
+
+    <div class="btn-row" style="margin-top:24px">
+      <button class="btn-secondary" onclick="goStep(3)">← Anpassen</button>
+      <button class="btn-primary" onclick="resetAll()">Neuer Check-in</button>
+    </div>
+  </div>
+
+  <div class="footer-note">Coach Cédi · Client Check-in Agent · Powered by Claude AI</div>
+</div>
+
+<script>
+  
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+let moodSelected = 'Neutral';
+  let currentStep = 0;
+
+  function goStep(n) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.step-tab').forEach(t => { t.classList.remove('active'); if(parseInt(t.dataset.step) < n) t.classList.add('done'); else t.classList.remove('done'); });
+    document.getElementById('step-' + n).classList.add('active');
+    document.querySelector('[data-step="'+n+'"]').classList.add('active');
+    currentStep = n;
+  }
+
+  function selectEmoji(group, emoji, label) {
+    moodSelected = label + ' ' + emoji;
+    document.querySelectorAll('#moodRow .emoji-btn').forEach(b => b.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+  }
+
+  function collectData() {
+    return {
+      name: document.getElementById('clientName').value || 'Klient',
+      week: document.getElementById('weekLabel').value || 'diese Woche',
+      goal: document.getElementById('clientGoal').value,
+      phase: document.getElementById('phase').value,
+      weight: document.getElementById('weight').value,
+      weightChange: document.getElementById('weightChange').value,
+      trainingSessions: document.getElementById('trainingSessions').value,
+      trainingDuration: document.getElementById('trainingDuration').value,
+      intensity: document.getElementById('intensity').value,
+      trainingGood: document.getElementById('trainingGood').value,
+      trainingBad: document.getElementById('trainingBad').value,
+      nutritionAdherence: document.getElementById('nutritionAdherence').value,
+      calories: document.getElementById('calories').value,
+      protein: document.getElementById('protein').value,
+      nutritionChallenges: document.getElementById('nutritionChallenges').value,
+      nutritionWins: document.getElementById('nutritionWins').value,
+      mood: moodSelected,
+      sleep: document.getElementById('sleep').value,
+      stress: document.getElementById('stress').value,
+      biggestChallenge: document.getElementById('biggestChallenge').value,
+      biggestWin: document.getElementById('biggestWin').value,
+      clientQuestions: document.getElementById('clientQuestions').value,
+    };
+  }
+
+  const goalMap = { fatloss: 'Fettabbau', muscle: 'Muskelaufbau', recomp: 'Rekomposition', performance: 'Performance' };
+  const phaseMap = { start: 'Startphase', mid: 'Aufbauphase', advanced: 'Fortgeschritten' };
+
+  function buildPrompt(d) {
+    return `Du bist Coach Cédi – ein erfahrener Fitness- und Life-Coach. Ein Klient hat seinen wöchentlichen Check-in eingereicht. Analysiere alle Daten und erstelle ein professionelles, motivierendes und konkretes Coach-Feedback auf Deutsch.
+
+KLIENT-DATEN:
+- Name: ${d.name}
+- Woche: ${d.week}
+- Ziel: ${goalMap[d.goal]}
+- Coaching-Phase: ${phaseMap[d.phase]}
+- Gewicht: ${d.weight} kg | Veränderung: ${d.weightChange}
+
+TRAINING:
+- Einheiten: ${d.trainingSessions}
+- Ø Dauer: ${d.trainingDuration} Min.
+- Intensität: ${d.intensity}/10
+- Positives: ${d.trainingGood || '–'}
+- Probleme: ${d.trainingBad || '–'}
+
+ERNÄHRUNG:
+- Plan-Adherence: ${d.nutritionAdherence}%
+- Ø Kalorien: ${d.calories} kcal | Protein: ${d.protein}g
+- Herausforderungen: ${d.nutritionChallenges || '–'}
+- Wins: ${d.nutritionWins || '–'}
+
+MENTAL & LIFESTYLE:
+- Stimmung: ${d.mood}
+- Schlaf: ${d.sleep}/10
+- Stress: ${d.stress}/10
+- Grösste Challenge: ${d.biggestChallenge || '–'}
+- Grösster Win: ${d.biggestWin || '–'}
+- Fragen des Klienten: ${d.clientQuestions || '–'}
+
+Erstelle GENAU folgende 3 Abschnitte, getrennt durch "---SECTION---":
+
+ABSCHNITT 1 – WOCHENANALYSE (für Coach-Notizen, intern):
+Kurze strukturierte Analyse: Was läuft gut? Was sind die kritischen Faktoren? Wie ist der Gesamttrend? (Max. 150 Wörter, Stichpunkte ok)
+
+ABSCHNITT 2 – COACH-NACHRICHT AN ${d.name.toUpperCase()} (direkt verwendbar, Copy-Paste):
+Persönliche, motivierende Nachricht von Coach Cédi an den Klienten. Beginne mit dem Namen. Anerkenne Fortschritte, sei direkt bei Problemen, gib 2–3 konkrete Handlungsempfehlungen für nächste Woche. Beantworte Fragen des Klienten falls vorhanden. Ton: professionell, warm, direkt. (200–280 Wörter)
+
+ABSCHNITT 3 – NÄCHSTE WOCHE: TOP 3 FOKUSPUNKTE:
+Drei kurze, konkrete Aufgaben/Ziele für den Klienten nächste Woche. Je eine Zeile, nummeriert.
+
+Antworte NUR mit den drei Abschnitten, getrennt durch ---SECTION---. Keine zusätzlichen Erklärungen.`;
+  }
+
+  async function analyzeCheckin() {
+    const btn = document.getElementById('analyzeBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const d = collectData();
+    goStep(4);
+
+    document.getElementById('errorBox').classList.remove('visible');
+    document.getElementById('metricsGrid').innerHTML = '';
+    document.getElementById('feedbackCards').innerHTML = '';
+
+    // Render metric cards immediately from form data
+    renderMetrics(d);
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: buildPrompt(d) }]
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.map(b => b.text || '').join('');
+      renderFeedback(text, d);
+    } catch (err) {
+      document.getElementById('errorBox').textContent = 'Fehler: ' + err.message;
+      document.getElementById('errorBox').classList.add('visible');
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function renderMetrics(d) {
+    const grid = document.getElementById('metricsGrid');
+    const adherence = parseInt(d.nutritionAdherence);
+    const intensityN = parseInt(d.intensity);
+    const sleepN = parseInt(d.sleep);
+    const stressN = parseInt(d.stress);
+
+    const metrics = [
+      { label: 'Ernährungs-Adherence', value: adherence + '%', cls: adherence >= 80 ? 'good' : adherence >= 60 ? 'warn' : 'bad' },
+      { label: 'Trainings-Intensität', value: intensityN + '/10', cls: intensityN >= 7 ? 'good' : intensityN >= 5 ? 'warn' : 'bad' },
+      { label: 'Schlafqualität', value: sleepN + '/10', cls: sleepN >= 7 ? 'good' : sleepN >= 5 ? 'warn' : 'bad' },
+      { label: 'Stresslevel', value: stressN + '/10', cls: stressN <= 4 ? 'good' : stressN <= 7 ? 'warn' : 'bad' },
+    ];
+
+    metrics.forEach((m, i) => {
+      const card = document.createElement('div');
+      card.className = 'metric-card';
+      card.style.animationDelay = (i * 80) + 'ms';
+      card.innerHTML = `<div class="metric-label">${m.label}</div><div class="metric-value ${m.cls}">${m.value}</div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  function renderFeedback(text, d) {
+    const parts = text.split('---SECTION---').map(s => s.trim()).filter(Boolean);
+    const labels = ['📋 Wochenanalyse (Coach-intern)', `💬 Nachricht an ${d.name}`, '🎯 Top 3 Fokuspunkte nächste Woche'];
+    const container = document.getElementById('feedbackCards');
+
+    parts.forEach((part, i) => {
+      const card = document.createElement('div');
+      card.className = 'feedback-card';
+      card.style.animationDelay = (i * 120) + 'ms';
+      card.innerHTML = `
+        <div class="feedback-header">
+          <div class="feedback-type">${labels[i] || 'Feedback'}</div>
+          <button class="copy-btn" onclick="copyText(this, \`${escapeTemplate(part)}\`)">Kopieren</button>
+        </div>
+        <div class="feedback-body">${part.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function escapeTemplate(str) { return str.replace(/`/g,'\\`').replace(/\$/g,'\\$'); }
+
+  async function copyText(btn, text) {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Kopiert';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Kopieren'; btn.classList.remove('copied'); }, 2000);
+  }
+
+  function resetAll() {
+    document.querySelectorAll('input[type=text], input[type=number], textarea').forEach(el => el.value = '');
+    document.querySelectorAll('input[type=range]').forEach(el => {
+      el.value = el.id === 'nutritionAdherence' ? 75 : el.id === 'stress' ? 5 : 7;
+      el.dispatchEvent(new Event('input'));
+    });
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+    moodSelected = 'Neutral';
+    goStep(0);
+  }
+</script>
+</body>
+</html>

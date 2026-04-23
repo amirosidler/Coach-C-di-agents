@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Analytics Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --orange: #ff6b1a;
+    --orange-light: #ff8845;
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --green: #4caf7d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.08) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 48px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 0.08em; color: var(--orange); line-height: 1; }
+  .logo span { color: var(--white); }
+  .tagline { font-size: 0.75rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-left: auto; }
+  .input-section { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 28px; margin-bottom: 28px; }
+  .section-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  input, textarea, select {
+    background: var(--black); border: 1px solid var(--border); color: var(--white);
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem; padding: 12px 14px;
+    border-radius: 2px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--orange); }
+  select option { background: var(--charcoal); }
+  textarea { resize: vertical; min-height: 80px; }
+  .format-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .format-btn {
+    background: var(--black); border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.08em; padding: 10px 8px; border-radius: 2px; cursor: pointer;
+    transition: all 0.2s; text-align: center; text-transform: uppercase;
+  }
+  .format-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .format-btn.active { background: var(--orange); border-color: var(--orange); color: var(--black); }
+  .generate-btn {
+    width: 100%; background: var(--orange); color: var(--black); border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.15em;
+    padding: 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px;
+  }
+  .generate-btn:hover:not(:disabled) { background: var(--orange-light); transform: translateY(-1px); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: var(--black); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .generate-btn.loading .spinner { display: block; }
+  .generate-btn.loading .btn-text { opacity: 0.7; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .output-section { display: none; }
+  .output-section.visible { display: block; }
+  .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .output-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em; color: var(--orange); }
+  .copy-all-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 14px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .copy-all-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .content-card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; margin-bottom: 16px; overflow: hidden; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); background: rgba(255,107,26,0.05); }
+  .card-type { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); }
+  .icon-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 0.72rem; padding: 5px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+  .icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .icon-btn.copied { border-color: var(--green); color: var(--green); }
+  .card-body { padding: 20px; font-size: 0.9rem; line-height: 1.75; color: #d4cfc8; white-space: pre-wrap; }
+  .card-body strong { color: var(--white); font-weight: 600; }
+  .error-box { background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); color: #ff8080; padding: 16px 20px; border-radius: 2px; font-size: 0.88rem; display: none; }
+  .error-box.visible { display: block; }
+  .footer-note { text-align: center; font-size: 0.7rem; color: var(--muted); margin-top: 48px; letter-spacing: 0.1em; text-transform: uppercase; }
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .format-grid { grid-template-columns: repeat(2, 1fr); }
+    .logo { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+
+  <header>
+    <div class="logo">Coach <span>Cédi</span></div>
+    <div class="tagline">Numbers & Insights</div>
+  </header>
+
+  <div class="input-section">
+    <div class="section-label">Zahlen auswerten</div>
+    
+    <div class="field" style="margin-bottom:16px">
+      <label>Zeitraum</label>
+      <input type="text" id="period" placeholder="z.B. Woche 17 / 2026 (21.–27. April)" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Report-Typ</label>
+        <select id="report_type"><option value="operational">Operativ (Leads/Trials)</option>
+<option value="growth">Growth (Content/Reach)</option>
+<option value="financial">Financial (Umsatz/Marge)</option>
+<option value="holistic">Ganzheitlich</option></select>
+      </div>
+      <div class="field">
+        <label>Tiefe</label>
+        <select id="depth"><option value="quick">Kurz (Exec-Summary)</option>
+<option value="standard">Standard</option>
+<option value="deep">Deep-Dive</option></select>
+      </div></div>
+    
+    <div class="field" style="margin-bottom:20px">
+      <label>Rohzahlen / Notizen (frei eintragen)</label>
+      <textarea id="context" placeholder="z.B. Leads: 12 (Vorwoche 8). Trials gebucht: 3. Conversion zum Coaching: 1. Umsatz: CHF 2'400. Instagram Reach: 18k (Vorwoche 14k). Top-Post: Skinny-Fat-Reel mit 220 Saves. Ausgaben Tools: CHF 180..."></textarea>
+    </div>
+    <div class="field" style="margin-bottom:20px">
+      <label>Format auswählen</label>
+      <div class="format-grid">
+        <button class="format-btn active" data-format="weekly">📊 Wochen-Report</button>
+        <button class="format-btn" data-format="monthly">📅 Monats-Report</button>
+        <button class="format-btn" data-format="trend">📈 Trend-Analyse</button>
+        <button class="format-btn" data-format="deepdive">🔍 KPI-Deep-Dive</button>
+        <button class="format-btn" data-format="all">⚡ Alles</button>
+        
+      </div>
+    </div>
+    <button class="generate-btn" id="generateBtn" onclick="generateContent()">
+      <div class="spinner"></div>
+      <span class="btn-text">Generieren</span>
+    </button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="output-section" id="outputSection">
+    <div class="output-header">
+      <div class="output-title">Output</div>
+      <button class="copy-all-btn" onclick="copyAll()">Alles kopieren</button>
+    </div>
+    <div id="cardsContainer"></div>
+  </div>
+
+  <div class="footer-note">Coach Cédi · Numbers & Insights · Powered by Claude</div>
+</div>
+
+<script>
+  
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+let selectedFormat = "weekly";
+  let lastGeneratedText = "";
+
+  document.querySelectorAll(".format-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedFormat = btn.dataset.format;
+    });
+  });
+
+  const formatInstructions = {
+      weekly: `Erstelle einen strukturierten Wochen-Report:\n- Headline (1 Satz: läuft's oder nicht)\n- Die 3 wichtigsten Zahlen mit Vergleich zur Vorwoche\n- Was hat funktioniert (evidenzbasiert, nicht bauchgefühl)\n- Was stagniert / verliert\n- 1–2 konkrete Anpassungen für nächste Woche`,
+      monthly: `Erstelle einen Monats-Report:\n- Executive Summary (3 Sätze)\n- Kern-KPIs des Monats (Tabelle: Wert, Vormonat, Trend)\n- Gewinner-Initiativen (was hat Hebel gehabt)\n- Verlierer-Initiativen (was runter oder weg)\n- Fokus-Frage für Folgemonat`,
+      trend: `Analysiere Trends über mehrere Wochen/Monate:\n- Welche Kurven zeigen nach oben, welche nach unten\n- Was ist zyklisch vs. strukturell\n- Welche Hypothesen werden bestätigt / widerlegt\n- Welche Weichenstellungen daraus folgen`,
+      deepdive: `Deep-Dive auf die zentralen KPIs:\n- Nordstern-Metrik: Status, Treiber, Bremsen\n- Funnel-Durchsatz (Reach → Lead → Trial → Kunde)\n- Drop-off-Punkte mit Hypothese, warum\n- Empfehlung für 1 Experiment zur Verbesserung`,
+      all: `Liefere alle Formate, je getrennt durch "=== FORMAT ===":\n1. WOCHEN-REPORT\n2. MONATS-REPORT\n3. TREND-ANALYSE\n4. KPI-DEEP-DIVE`,
+    };
+  const splitLabels = ["Wochen-Report", "Monats-Report", "Trend-Analyse", "KPI-Deep-Dive"];
+
+  function buildPrompt() {
+      const period = document.getElementById("period").value.trim();
+      const report_type = document.getElementById("report_type").value.trim();
+      const depth = document.getElementById("depth").value.trim();
+      const context = document.getElementById("context").value.trim();
+
+      const instr = formatInstructions[selectedFormat];
+
+      const userBlock = `Feld period: ${period || '–'}
+Feld report_type: ${report_type || '–'}
+Feld depth: ${depth || '–'}
+Feld context: ${context || '–'}`;
+
+      return `Du bist der Analytics-Agent von Coach Cédi. Deine Aufgabe: Zahlen lesen, Muster erkennen, Handlungsempfehlungen ableiten. Du bist sachlich, vorsichtig mit Überinterpretation bei kleinen Samples, und du trennst klar zwischen Fakt, Hypothese und Bauchgefühl.
+
+Du arbeitest für Coach Cédi, Online Body Recomposition & Performance Coaching für berufstätige Männer (30–45) im D-A-CH-Raum. Marke: seriös, erwachsen, direkt, ruhig, substantiell. Deutsch. Keine Emojis. Keine Hustle-Rhetorik. Keine Floskeln. Fachbegriffe wenn präziser. Zielgruppe erkennt sich in leiser Kompetenz wieder.
+
+Regeln:
+- Keine Anfeuerungs-Rhetorik ("Super Fortschritt!"). Nur was die Zahlen hergeben.
+- Bei kleinen Samples (unter 10) explizit sagen: "statistisch nicht belastbar, Richtungsindikator".
+- Immer mind. eine konkrete, testbare Anpassung vorschlagen.
+
+Aufgabe – Inputs des Nutzers:
+${userBlock}
+
+Format-Anweisung:
+${instr}
+
+Antworte auf Deutsch. Keine Meta-Kommentare, direkt mit dem Output beginnen. Keine Emojis im Fließtext.`;
+  }
+
+  async function generateContent() {
+    const btn = document.getElementById("generateBtn");
+    btn.classList.add("loading");
+    btn.disabled = true;
+    document.getElementById("errorBox").classList.remove("visible");
+    document.getElementById("outputSection").classList.remove("visible");
+    document.getElementById("cardsContainer").innerHTML = "";
+
+    try {
+      const prompt = buildPrompt();
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1500,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.content.map(b => b.text || "").join("");
+      lastGeneratedText = text;
+      renderOutput(text);
+    } catch (err) {
+      showError("Fehler: " + err.message);
+    } finally {
+      btn.classList.remove("loading");
+      btn.disabled = false;
+    }
+  }
+
+  function renderOutput(text) {
+    const container = document.getElementById("cardsContainer");
+    container.innerHTML = "";
+    if (selectedFormat === "all") {
+      const sections = text.split(/===\s*[A-ZÄÖÜ\s\-]+===/g).filter(s => s.trim());
+      sections.forEach((section, i) => {
+        createCard(container, splitLabels[i] || "Output", section.trim(), i * 120);
+      });
+    } else {
+      const label = document.querySelector(".format-btn.active")?.textContent?.trim() || "Output";
+      createCard(container, label, text.trim(), 0);
+    }
+    document.getElementById("outputSection").classList.add("visible");
+  }
+
+  function createCard(container, label, content, delay) {
+    const card = document.createElement("div");
+    card.className = "content-card";
+    card.style.animationDelay = delay + "ms";
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-type">${label}</div>
+        <button class="icon-btn" onclick="copyCard(this, \`${escapeTemplate(content)}\`)">Kopieren</button>
+      </div>
+      <div class="card-body">${formatBody(content)}</div>
+    `;
+    container.appendChild(card);
+  }
+
+  function formatBody(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/^(SLIDE \d+:|STORY \d+:|HOOK \d+:|MAIL \d+:|TIER \d+:|SZENARIO \d+:|===.*===)/gm, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
+  }
+
+  function escapeTemplate(str) {
+    return str.replace(/`/g, "\\`").replace(/\$/g, "\\$");
+  }
+
+  async function copyCard(btn, text) {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = "✓ Kopiert";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Kopieren"; btn.classList.remove("copied"); }, 2000);
+  }
+
+  async function copyAll() {
+    await navigator.clipboard.writeText(lastGeneratedText);
+    const btn = document.querySelector(".copy-all-btn");
+    btn.textContent = "✓ Alles kopiert";
+    setTimeout(() => { btn.textContent = "Alles kopieren"; }, 2000);
+  }
+
+  function showError(msg) {
+    const box = document.getElementById("errorBox");
+    box.textContent = msg;
+    box.classList.add("visible");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Social Media Agent v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #090909;
+    --card: #131313;
+    --card2: #1c1c1c;
+    --border: #252525;
+    --gold: #ff6b1a;
+    --gold-dim: rgba(255,107,26,0.1);
+    --white: #f0ebe0;
+    --muted: #635e58;
+    --green: #3fa86e;
+    --green-dim: rgba(63,168,110,0.1);
+    --blue: #4a8fd4;
+    --pink: #d44a8f;
+    --pink-dim: rgba(212,74,143,0.1);
+    --purple: #8b5cf6;
+    --purple-dim: rgba(139,92,246,0.1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(255,107,26,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+  .app{position:relative;z-index:1;display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  .sidebar{background:var(--card);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border)}
+  .logo-text{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:0.08em;color:var(--gold);line-height:1}
+  .logo-sub{font-size:0.6rem;color:var(--muted);letter-spacing:0.18em;text-transform:uppercase;margin-top:3px}
+  .nav{padding:20px 12px;flex:1;overflow-y:auto}
+  .nav-label{font-size:0.58rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:8px;margin-top:16px}
+  .nav-label:first-child{margin-top:0}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;font-size:0.84rem;font-weight:500;color:var(--muted);border:1px solid transparent}
+  .nav-item:hover{background:var(--card2);color:var(--white)}
+  .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(255,107,26,0.2)}
+  .nav-icon{font-size:1rem;min-width:20px;text-align:center}
+
+  .dna-status{padding:12px 14px;margin:8px 12px 0;border-radius:2px;font-size:0.7rem;line-height:1.4;text-align:center}
+  .dna-status.empty{background:rgba(212,131,74,0.1);border:1px solid rgba(212,131,74,0.3);color:#d4834a}
+  .dna-status.ok{background:var(--green-dim);border:1px solid rgba(63,168,110,0.3);color:var(--green)}
+
+  .platform-pill{display:inline-flex;align-items:center;gap:5px;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+  .pill-ig{background:var(--pink-dim);color:var(--pink);border:1px solid rgba(212,74,143,0.25)}
+  .pill-li{background:rgba(74,143,212,0.1);color:var(--blue);border:1px solid rgba(74,143,212,0.25)}
+
+  .main{padding:36px 40px;overflow-y:auto}
+  .page{display:none}
+  .page.active{display:block;animation:fadeIn 0.25s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .page-header{margin-bottom:28px}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.08em;color:var(--white);line-height:1}
+  .page-subtitle{font-size:0.8rem;color:var(--muted);margin-top:6px}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:16px 18px}
+  .stat-label{font-size:0.58rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.04em;line-height:1}
+  .v-gold{color:var(--gold)} .v-pink{color:var(--pink)} .v-blue{color:var(--blue)} .v-green{color:var(--green)}
+
+  .section-label{font-size:0.6rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:22px;margin-bottom:16px}
+  .card-sub{background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:18px;margin-bottom:14px}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{font-size:0.67rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .field .hint{font-size:0.72rem;color:var(--muted);font-style:italic;margin-top:-3px;margin-bottom:4px;line-height:1.4}
+  input,textarea,select{background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 13px;border-radius:2px;outline:none;transition:border-color 0.2s;width:100%}
+  input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+  select option{background:#1a1a1a}
+  textarea{resize:vertical;min-height:80px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+  .chip-wrap{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{background:var(--black);border:1px solid var(--border);color:var(--muted);font-size:0.7rem;font-weight:500;letter-spacing:0.06em;padding:6px 12px;border-radius:2px;cursor:pointer;transition:all 0.15s}
+  .chip:hover{border-color:var(--gold);color:var(--gold)}
+  .chip.on{background:var(--gold);border-color:var(--gold);color:var(--black)}
+  .chip.ig.on{background:var(--pink);border-color:var(--pink);color:var(--white)}
+  .chip.li.on{background:var(--blue);border-color:var(--blue);color:var(--white)}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:2px;cursor:pointer;transition:all 0.2s;border:none}
+  .btn-gold{background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.14em;padding:14px 24px}
+  .btn-gold:hover:not(:disabled){background:#dbb95a;transform:translateY(-1px)}
+  .btn-gold:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+  .btn-gold.full{width:100%;justify-content:center}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.76rem;padding:8px 14px}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-ghost.sm{padding:5px 10px;font-size:0.68rem}
+  .btn-ghost.ok{border-color:var(--green);color:var(--green)}
+  .spinner{width:15px;height:15px;border:2px solid rgba(0,0,0,0.25);border-top-color:var(--black);border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+  .btn-gold.loading .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .out-card{background:var(--card);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:14px;animation:fadeIn 0.3s ease}
+  .out-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(255,107,26,0.03);gap:10px;flex-wrap:wrap}
+  .out-label{font-size:0.6rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold)}
+  .out-body{padding:18px;font-size:0.86rem;line-height:1.8;color:#ccc8c0;white-space:pre-wrap}
+  .out-body strong{color:var(--white)}
+
+  .ad-format-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .ad-format{background:var(--black);border:1px solid var(--border);border-radius:2px;padding:14px;cursor:pointer;transition:all 0.15s;text-align:center}
+  .ad-format:hover{border-color:var(--gold)}
+  .ad-format.on{border-color:var(--gold);background:var(--gold-dim)}
+  .ad-format-icon{font-size:1.6rem;margin-bottom:6px}
+  .ad-format-name{font-size:0.72rem;font-weight:600;color:var(--white)}
+  .ad-format-desc{font-size:0.65rem;color:var(--muted);margin-top:3px}
+
+  .err{background:rgba(192,71,58,0.1);border:1px solid rgba(192,71,58,0.3);color:#e88;padding:12px 16px;border-radius:2px;font-size:0.84rem;display:none;margin-bottom:14px}
+  .err.on{display:block}
+  .info-box{background:var(--gold-dim);border:1px solid rgba(255,107,26,0.2);border-radius:2px;padding:14px 18px;font-size:0.83rem;color:#d4cfc8;line-height:1.65;margin-bottom:16px}
+  .info-box strong{color:var(--gold)}
+  .warn-box{background:rgba(212,131,74,0.08);border:1px solid rgba(212,131,74,0.2);border-radius:2px;padding:14px 18px;font-size:0.82rem;color:#d4cfc8;line-height:1.6;margin-bottom:16px}
+  .warn-box strong{color:#d4834a}
+
+  .ldots::after{content:'.';animation:ldots 1s infinite}
+  @keyframes ldots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+
+  /* DNA PAGE */
+  .dna-section{border-left:3px solid var(--gold);padding-left:18px;margin-bottom:24px}
+  .dna-section-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:4px}
+  .dna-section-desc{font-size:0.78rem;color:var(--muted);margin-bottom:14px;font-style:italic}
+
+  .pillar-block{background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:16px;margin-bottom:12px}
+  .pillar-block-title{font-size:0.72rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+
+  .save-bar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--gold);padding:14px 22px;margin:0 -22px -22px;display:flex;gap:10px;align-items:center;justify-content:space-between;z-index:10}
+  .save-status{font-size:0.76rem;color:var(--muted)}
+  .save-status.saved{color:var(--green)}
+
+  .matrix-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .matrix-cell{background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:14px}
+  .matrix-cell.gold{border-color:var(--gold);background:var(--gold-dim)}
+  .matrix-cell .mc-label{font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .matrix-cell .mc-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.06em;color:var(--white)}
+  .matrix-cell.gold .mc-title{color:var(--gold)}
+  .matrix-cell p{font-size:0.75rem;color:var(--muted);margin-top:4px;line-height:1.5}
+
+  @media(max-width:700px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .stats-row{grid-template-columns:1fr 1fr}
+    .ad-format-grid{grid-template-columns:1fr}
+    .field-row,.field-row-3{grid-template-columns:1fr}
+    .matrix-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">Coach Cédi</div>
+      <div class="logo-sub">Social Media Agent · v2</div>
+    </div>
+    <div id="dnaStatus" class="dna-status empty">Brand DNA noch nicht gespeichert</div>
+    <nav class="nav">
+      <div class="nav-label">Fundament</div>
+      <div class="nav-item" onclick="nav('dna', this)"><span class="nav-icon">🧬</span>Brand DNA</div>
+      <div class="nav-label">Content</div>
+      <div class="nav-item active" onclick="nav('create', this)"><span class="nav-icon">✍️</span>Content erstellen</div>
+      <div class="nav-item" onclick="nav('repurpose', this)"><span class="nav-icon">🔄</span>Content recyceln</div>
+      <div class="nav-item" onclick="nav('calendar', this)"><span class="nav-icon">📅</span>Wochenplan</div>
+      <div class="nav-label">Distribution</div>
+      <div class="nav-item" onclick="nav('publish', this)"><span class="nav-icon">🚀</span>Posten &amp; Planen</div>
+      <div class="nav-item" onclick="nav('ads', this)"><span class="nav-icon">📣</span>Ads Generator</div>
+      <div class="nav-label">Analyse</div>
+      <div class="nav-item" onclick="nav('strategy', this)"><span class="nav-icon">📊</span>Strategie &amp; Wachstum</div>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <!-- PAGE: BRAND DNA -->
+    <div class="page" id="page-dna">
+      <div class="page-header">
+        <div class="page-title">Brand DNA</div>
+        <div class="page-subtitle">Deine 4M's, Pillars und Audience – einmal definieren, in jedem Prompt automatisch genutzt</div>
+      </div>
+
+      <div class="info-box">
+        <strong>Wie das funktioniert:</strong> Alles, was du hier einträgst, wird automatisch in jede Prompt-Anfrage an die KI eingebaut. Dadurch schreibt die KI nicht mehr generischen "Fitness-Content" – sondern Content, der zu deiner Identität, Mission, Zielgruppe und deinem Business passt. Du musst das nur einmal ausfüllen.
+      </div>
+
+      <!-- THE MAN -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">1 · The Man</div>
+          <div class="dna-section-desc">Der Mensch hinter der Brand – Identität, Geschichte, Werte</div>
+        </div>
+        <div class="field">
+          <label>Wer bist du? Deine Story, Werte, Persönlichkeit</label>
+          <div class="hint">Was hat dich geprägt? Welche Werte definieren dich? Wer wirst du?</div>
+          <textarea id="dna_man" placeholder="z.B. 32 Jahre, aus Basel, seit 10 Jahren Kraftsport. HR-Advisor hauptberuflich, Coach nebenberuflich. Disziplin, Tiefe, keine Oberflächlichkeit. Ich stehe für direkte, ehrliche Kommunikation ohne Bullshit..."></textarea>
+        </div>
+      </div>
+
+      <!-- THE MISSION -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">2 · The Mission</div>
+          <div class="dna-section-desc">Wohin gehst du? Deine Vision und deine Anti-Vision</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Deine Vision</label>
+            <div class="hint">Welches Leben baust du auf?</div>
+            <textarea id="dna_vision" placeholder="z.B. Finanziell unabhängig durch Coaching-Business, maximale körperliche Performance, Menschen inspirieren, die glauben es sei zu spät..."></textarea>
+          </div>
+          <div class="field">
+            <label>Deine Anti-Vision</label>
+            <div class="hint">Welches Leben willst du unbedingt vermeiden?</div>
+            <textarea id="dna_antivision" placeholder="z.B. Mittelmässigkeit, passive Karriere im Angestelltenverhältnis ohne Gestaltungsmacht, körperlich abbauen im Büroalltag, ausreden statt handeln..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- THE MESSAGE -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">3 · The Message</div>
+          <div class="dna-section-desc">Deine Philosophie, Überzeugungen, Weltanschauung</div>
+        </div>
+        <div class="field">
+          <label>Deine 3–5 wichtigsten Überzeugungen</label>
+          <div class="hint">Was glaubst du über Disziplin, Erfolg, Körper, Arbeit – das andere nicht sehen?</div>
+          <textarea id="dna_message" placeholder="z.B. 1) Körperliche Exzellenz ist kein Hobby, sondern Fundament. 2) Die meisten scheitern nicht am Plan, sondern an ihrer Identität. 3) Zeitmangel ist meistens Prioritätenfrage. 4) Extreme Diäten sind für Amateure..."></textarea>
+        </div>
+      </div>
+
+      <!-- THE MECHANISM -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">4 · The Mechanism</div>
+          <div class="dna-section-desc">Dein Business, deine Methode, dein einzigartiger Ansatz</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Dein Hauptangebot</label>
+            <textarea id="dna_offer" placeholder="z.B. 12-Wochen 1:1 Body Recomposition Coaching für berufstätige Männer..."></textarea>
+          </div>
+          <div class="field">
+            <label>Deine einzigartige Methode / dein Framework</label>
+            <textarea id="dna_method" placeholder="z.B. Die 'Performance Recomp' Methode: 80/20 Ernährung, minimalistisches 3x/Woche Training, Fokus auf Lebensalltag nicht auf Extreme..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- BRAND PILLARS -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">Brand Pillars · 3 Säulen × 3 Subtopics</div>
+          <div class="dna-section-desc">Deine Content-Themen – alles, was du postest, fällt in eine dieser 9 Kategorien</div>
+        </div>
+
+        <div class="pillar-block">
+          <div class="pillar-block-title">💼 Säule 1 – Money-Making Interest (deine Expertise)</div>
+          <div class="field">
+            <label>Pillar-Name</label>
+            <input type="text" id="dna_p1" placeholder="z.B. Body Recomposition Coaching" value="Body Recomposition Coaching">
+          </div>
+          <div class="field">
+            <label>3 Subtopics</label>
+            <input type="text" id="dna_p1s" placeholder="z.B. Training, Ernährungsstrategie, Coaching-Methodik" value="Training-Prinzipien, Ernährungsstrategie, Coaching-Methodik">
+          </div>
+        </div>
+
+        <div class="pillar-block">
+          <div class="pillar-block-title">❤️ Säule 2 – Genuine Interest (deine Persönlichkeit)</div>
+          <div class="field">
+            <label>Pillar-Name</label>
+            <input type="text" id="dna_p2" placeholder="z.B. Fitness-Lifestyle" value="Fitness-Lifestyle & Performance">
+          </div>
+          <div class="field">
+            <label>3 Subtopics</label>
+            <input type="text" id="dna_p2s" placeholder="z.B. Home Gym, Produktivität, Athleten-Mindset" value="Home Gym Setup, Produktivität & Alltag, Athleten-Mindset">
+          </div>
+        </div>
+
+        <div class="pillar-block">
+          <div class="pillar-block-title">🌱 Säule 3 – Developmental Interest (dein Wachstum)</div>
+          <div class="field">
+            <label>Pillar-Name</label>
+            <input type="text" id="dna_p3" placeholder="z.B. Persönliches Wachstum" value="Persönliches Wachstum & Unternehmertum">
+          </div>
+          <div class="field">
+            <label>3 Subtopics</label>
+            <input type="text" id="dna_p3s" placeholder="z.B. Disziplin, Unternehmer-Mindset, Biohacking" value="Disziplin & Identität, Unternehmer-Mindset, Selbstoptimierung">
+          </div>
+        </div>
+      </div>
+
+      <!-- DREAM FOLLOWER -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">Dream Follower</div>
+          <div class="dna-section-desc">Menschen, die sich in dir wiedersehen – deine Kernzielgruppe</div>
+        </div>
+        <div class="field">
+          <label>Wer sind sie?</label>
+          <div class="hint">Alter, Beruf, Lebenssituation, Werte, Persönlichkeit</div>
+          <textarea id="dna_dreamfollower" placeholder="z.B. Männer 28–45, berufstätig (Kadermitarbeiter, Unternehmer, Freelancer), ambitioniert, disziplinenorientiert. Haben Familie/Partnerin, verdienen gut, aber Körper wird vernachlässigt. Schätzen Direktheit, keine Esoterik..."></textarea>
+        </div>
+        <div class="field">
+          <label>Was wollen sie? Was ist ihre Anti-Vision?</label>
+          <textarea id="dna_dreamwants" placeholder="z.B. Wollen athletischen Körper, Respekt, Energie. Fürchten mit 50 wie ihr Vater auszusehen, im Spiegel nicht mehr wiederzuerkennen, von ihren Kindern als 'schwach' wahrgenommen zu werden..."></textarea>
+        </div>
+      </div>
+
+      <!-- IDEAL CLIENT -->
+      <div class="card">
+        <div class="dna-section">
+          <div class="dna-section-title">Ideal Client</div>
+          <div class="dna-section-desc">Die Teilmenge deiner Dream Follower, die auch dein Coaching kauft</div>
+        </div>
+        <div class="field">
+          <label>Aktuelle Situation</label>
+          <textarea id="dna_clientstatus" placeholder="z.B. Verdient 120k+ CHF, 32–42 Jahre, 15–25 kg Übergewicht oder 'skinny fat', hat schon alles probiert (Low Carb, Keto, Crossfit), nichts hält..."></textarea>
+        </div>
+        <div class="field">
+          <label>Gewünschte Transformation in 30–90 Tagen</label>
+          <textarea id="dna_clienttransformation" placeholder="z.B. Sichtbar definierter Körper, 8–15 kg Fett runter, 3–5 kg Muskel drauf, System das im stressigen Beruf funktioniert, mehr Energie und Selbstvertrauen..."></textarea>
+        </div>
+        <div class="field">
+          <label>Was macht jemanden zu einem schlechten Fit?</label>
+          <textarea id="dna_badfit" placeholder="z.B. Will schnelle Abkürzungen, nicht bereit zu trainieren, sucht 'Wunderpille', nicht bereit für Investition, nicht offen für ehrliches Feedback..."></textarea>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <div class="save-status" id="saveStatus">Änderungen werden lokal gespeichert</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="loadDNA()">Neu laden</button>
+          <button class="btn btn-gold" onclick="saveDNA()"><span>💾 Brand DNA speichern</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: CREATE -->
+    <div class="page active" id="page-create">
+      <div class="page-header">
+        <div class="page-title">Content erstellen</div>
+        <div class="page-subtitle">KI erstellt Content mit deiner Brand DNA + Founder Flow Framework + Re-Hooks</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Posts erstellt</div><div class="stat-value v-gold" id="s-posts">0</div></div>
+        <div class="stat-card"><div class="stat-label">Instagram</div><div class="stat-value v-pink" id="s-ig">0</div></div>
+        <div class="stat-card"><div class="stat-label">LinkedIn</div><div class="stat-value v-blue" id="s-li">0</div></div>
+        <div class="stat-card"><div class="stat-label">Diese Session</div><div class="stat-value v-green" id="s-week">0</div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Neuen Post erstellen</div>
+
+        <div class="field">
+          <label>Thema / Idee</label>
+          <input type="text" id="cTopic" placeholder="z.B. Warum berufstätige Männer nie abnehmen..."/>
+        </div>
+
+        <div class="field">
+          <label>Funnel Stage</label>
+          <div class="hint">Welche Phase der Customer Journey? Bestimmt Ton, Länge und CTA-Typ.</div>
+          <div class="chip-wrap" id="funnelChips">
+            <div class="chip on" data-v="Audience Building">📢 Audience Building</div>
+            <div class="chip" data-v="Brand Building">🤝 Brand Building</div>
+            <div class="chip" data-v="Client Building">🎯 Client Building</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Brand Pillar</label>
+          <div class="hint">Woher kommt das Thema? Sorgt für On-Brand Content.</div>
+          <div class="chip-wrap" id="pillarChips">
+            <div class="chip on" data-v="Money-Making">💼 Money-Making (Expertise)</div>
+            <div class="chip" data-v="Genuine">❤️ Genuine Interest</div>
+            <div class="chip" data-v="Developmental">🌱 Developmental</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Gewünschte Wirkung</label>
+          <div class="hint">Was soll der Viewer fühlen? Formate werden entsprechend gewählt.</div>
+          <div class="chip-wrap" id="emotionChips">
+            <div class="chip on" data-v="Authority">🎓 Autorität</div>
+            <div class="chip" data-v="Relatability">🪞 Identifikation</div>
+            <div class="chip" data-v="Admiration">⭐ Bewunderung</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Plattform</label>
+          <div class="chip-wrap" id="platformChips">
+            <div class="chip ig on" data-v="Instagram">📸 Instagram</div>
+            <div class="chip li" data-v="LinkedIn">💼 LinkedIn</div>
+            <div class="chip" data-v="Beide Plattformen">🔁 Beide</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Format</label>
+          <div class="chip-wrap" id="formatChips">
+            <div class="chip on" data-v="Reel Script">🎬 Reel Script</div>
+            <div class="chip" data-v="Carousel (7 Slides)">📱 Carousel</div>
+            <div class="chip" data-v="Caption / Post">✍️ Caption</div>
+            <div class="chip" data-v="Story-Serie (5 Slides)">💬 Story-Serie</div>
+            <div class="chip" data-v="3 Hook-Varianten">🎣 Hooks</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Ton</label>
+            <select id="cTone">
+              <option>Direkt & motivierend</option>
+              <option>Edukativ & sachlich</option>
+              <option>Provokativ / Myth-busting</option>
+              <option>Persönlich & nahbar</option>
+              <option>Humorvoll</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>CTA Ziel</label>
+            <select id="cCta">
+              <option>Kommentare anregen</option>
+              <option>Profil besuchen / Folgen</option>
+              <option>DM senden</option>
+              <option>Link in Bio</option>
+              <option>Kostenloses Erstgespräch</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Persönliche Story / Kontext (optional, aber stark empfohlen)</label>
+          <div class="hint">Founder Flow funktioniert am besten mit echter Story – eigene Erfahrung, Kundengespräch, Beobachtung.</div>
+          <textarea id="cContext" placeholder="z.B. Letzte Woche hat mir ein Klient gesagt: 'Ich hab seit 3 Jahren alles probiert' – bis ich ihm das hier gezeigt habe..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-gold" id="createBtn" onclick="createContent()"><div class="spinner"></div><span>Content generieren</span></button>
+          <button class="btn btn-ghost" onclick="quickWeekPlan()">⚡ Schnell-Wochenplan (7 Posts)</button>
+        </div>
+      </div>
+
+      <div class="err" id="createErr"></div>
+      <div id="createOut"></div>
+    </div>
+
+    <!-- PAGE: REPURPOSE -->
+    <div class="page" id="page-repurpose">
+      <div class="page-header">
+        <div class="page-title">Content recyceln</div>
+        <div class="page-subtitle">1 Idee → automatisch für alle Plattformen & Formate angepasst</div>
+      </div>
+
+      <div class="info-box">
+        <strong>Content Recycling:</strong> Füge bestehenden Post, Script oder eine Idee ein – die KI macht daraus Varianten für IG Reels, Carousel, LinkedIn, Stories und Hooks. Jedes Format behält den Founder Flow bei.
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>Original-Content (einfügen)</label>
+          <textarea id="rOriginal" style="min-height:120px" placeholder="z.B. bestehender Post, Reel-Script, Transkript..."></textarea>
+        </div>
+        <div class="field">
+          <label>Was daraus erstellen?</label>
+          <div class="chip-wrap" id="repurposeChips">
+            <div class="chip on" data-v="Instagram Reel Script">🎬 IG Reel</div>
+            <div class="chip on" data-v="Instagram Carousel">📱 IG Carousel</div>
+            <div class="chip on" data-v="LinkedIn Post">💼 LinkedIn Post</div>
+            <div class="chip" data-v="Instagram Story-Serie">💬 IG Stories</div>
+            <div class="chip" data-v="3 Hook-Varianten">🎣 Hooks</div>
+            <div class="chip" data-v="YouTube Shorts Script">▶️ YT Shorts</div>
+          </div>
+        </div>
+        <button class="btn btn-gold full" id="repurposeBtn" onclick="repurposeContent()"><div class="spinner"></div><span>Content für alle Formate aufbereiten</span></button>
+      </div>
+      <div class="err" id="repurposeErr"></div>
+      <div id="repurposeOut"></div>
+    </div>
+
+    <!-- PAGE: CALENDAR -->
+    <div class="page" id="page-calendar">
+      <div class="page-header">
+        <div class="page-title">Wochenplan</div>
+        <div class="page-subtitle">KI plant deine Content-Woche balanciert über alle 3 Pillars + Funnel-Stages</div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Wochenplan generieren</div>
+        <div class="field-row">
+          <div class="field"><label>Posts pro Woche (Instagram)</label>
+            <select id="calIg"><option>3x</option><option selected>5x</option><option>7x</option></select>
+          </div>
+          <div class="field"><label>Posts pro Woche (LinkedIn)</label>
+            <select id="calLi"><option>2x</option><option selected>3x</option><option>5x</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Themen-Fokus diese Woche (optional)</label>
+          <input type="text" id="calFocus" placeholder="z.B. Fettabbau, Mindset, Home Gym..."/>
+        </div>
+        <button class="btn btn-gold full" id="calBtn" onclick="generateCalendar()"><div class="spinner"></div><span>Wochenplan erstellen</span></button>
+      </div>
+      <div class="err" id="calErr"></div>
+      <div id="calOut"></div>
+    </div>
+
+    <!-- PAGE: PUBLISH -->
+    <div class="page" id="page-publish">
+      <div class="page-header">
+        <div class="page-title">Posten & Planen</div>
+        <div class="page-subtitle">Content optimieren und direkt für Buffer/Later aufbereiten</div>
+      </div>
+
+      <div class="warn-box">
+        <strong>⚠️ Direkt-Posting:</strong> Instagram & LinkedIn erlauben kein direktes Posting via API. Der Agent bereitet Content perfekt formatiert für Buffer/Later/Hootsuite vor – du kopierst nur noch rein und planst.
+      </div>
+
+      <div class="card">
+        <div class="section-label">Post für Publishing aufbereiten</div>
+        <div class="field">
+          <label>Dein Content (Roh-Text oder Script)</label>
+          <textarea id="pubContent" style="min-height:120px" placeholder="Füge deinen Post-Text ein..."></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Plattform</label>
+            <select id="pubPlatform">
+              <option>Instagram Post</option>
+              <option>Instagram Reel Caption</option>
+              <option>LinkedIn Post</option>
+              <option>Alle drei</option>
+            </select>
+          </div>
+          <div class="field"><label>Optimierungs-Ziel</label>
+            <select id="pubGoal">
+              <option>Maximale Reichweite</option>
+              <option>Engagement (Kommentare)</option>
+              <option>Leads / DMs</option>
+              <option>Follower-Wachstum</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-gold full" id="pubBtn" onclick="preparePublish()"><div class="spinner"></div><span>Für Publishing optimieren</span></button>
+      </div>
+
+      <div class="card">
+        <div class="section-label">📅 Beste Posting-Zeiten (Coach Cédi Zielgruppe)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:14px">
+            <div class="platform-pill pill-ig" style="margin-bottom:10px">📸 Instagram</div>
+            <div style="font-size:0.8rem;color:#ccc;line-height:1.8">Mo–Fr: <strong style="color:var(--white)">07:00–08:30</strong><br>Di & Do: <strong style="color:var(--white)">12:00–13:00</strong><br>So: <strong style="color:var(--white)">19:00–20:30</strong></div>
+          </div>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:14px">
+            <div class="platform-pill pill-li" style="margin-bottom:10px">💼 LinkedIn</div>
+            <div style="font-size:0.8rem;color:#ccc;line-height:1.8">Di–Do: <strong style="color:var(--white)">07:30–09:00</strong><br>Mi: <strong style="color:var(--white)">12:00–13:00</strong><br>Do: <strong style="color:var(--white)">17:30–18:30</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="err" id="pubErr"></div>
+      <div id="pubOut"></div>
+    </div>
+
+    <!-- PAGE: ADS -->
+    <div class="page" id="page-ads">
+      <div class="page-header">
+        <div class="page-title">Ads Generator</div>
+        <div class="page-subtitle">Professionelle Anzeigen mit deinem USP, Mechanism und Ideal-Client-Profil</div>
+      </div>
+
+      <div class="info-box">
+        <strong>Was dieser Agent macht:</strong> Vollständige Ad-Texte, Targeting, Budget und Creatives-Briefing für Instagram &amp; LinkedIn. Nutzt automatisch dein Ideal-Client-Profil aus der Brand DNA.
+      </div>
+
+      <div class="card">
+        <div class="section-label">Ad-Kampagne erstellen</div>
+
+        <div class="field"><label>Kampagnen-Ziel</label>
+          <div class="ad-format-grid" id="adGoalGrid">
+            <div class="ad-format on" onclick="selectAdGoal(this,'Leads &amp; Anfragen generieren')">
+              <div class="ad-format-icon">🎯</div>
+              <div class="ad-format-name">Lead Gen</div>
+              <div class="ad-format-desc">DMs & Anfragen</div>
+            </div>
+            <div class="ad-format" onclick="selectAdGoal(this,'Bekanntheit &amp; Reichweite steigern')">
+              <div class="ad-format-icon">📢</div>
+              <div class="ad-format-name">Awareness</div>
+              <div class="ad-format-desc">Reichweite aufbauen</div>
+            </div>
+            <div class="ad-format" onclick="selectAdGoal(this,'Direktverkauf / Coaching-Paket buchen')">
+              <div class="ad-format-icon">💰</div>
+              <div class="ad-format-name">Conversion</div>
+              <div class="ad-format-desc">Direkt verkaufen</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field"><label>Monatliches Budget</label>
+            <select id="adBudget">
+              <option value="100">CHF/€ 100 (Testphase)</option>
+              <option value="300" selected>CHF/€ 300 (Wachstum)</option>
+              <option value="500">CHF/€ 500 (Skalierung)</option>
+              <option value="1000">CHF/€ 1000+</option>
+            </select>
+          </div>
+          <div class="field"><label>Plattform</label>
+            <select id="adPlatform">
+              <option>Instagram</option>
+              <option>LinkedIn</option>
+              <option>Instagram + Facebook</option>
+              <option>Alle Plattformen</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field"><label>Angebot / Was wird beworben?</label><input type="text" id="adOffer" placeholder="z.B. 12-Wochen Coaching, Erstgespräch kostenlos..."/></div>
+        <div class="field"><label>Unique Selling Point (falls DNA leer)</label><input type="text" id="adUsp" placeholder="Wird aus Mechanism/Method übernommen falls leer"/></div>
+
+        <button class="btn btn-gold full" id="adBtn" onclick="generateAds()"><div class="spinner"></div><span>Ad-Kampagne erstellen</span></button>
+      </div>
+      <div class="err" id="adErr"></div>
+      <div id="adOut"></div>
+    </div>
+
+    <!-- PAGE: STRATEGY -->
+    <div class="page" id="page-strategy">
+      <div class="page-header">
+        <div class="page-title">Strategie & Wachstum</div>
+        <div class="page-subtitle">KI analysiert und optimiert deine Personal Brand mit Performance Matrix</div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Personal Performance Matrix</div>
+        <p style="font-size:0.82rem;color:#ccc;line-height:1.6;margin-bottom:8px">Jede Content-Idee wird nach zwei Achsen bewertet – Resonanz (begeistert sie dich?) und Performance (funktioniert sie für ähnliche Creator?):</p>
+        <div class="matrix-grid">
+          <div class="matrix-cell gold">
+            <div class="mc-label">Hoch Resonanz · Hoch Performance</div>
+            <div class="mc-title">GOLD IDEA</div>
+            <p>Sofort produzieren</p>
+          </div>
+          <div class="matrix-cell">
+            <div class="mc-label">Niedrig Resonanz · Hoch Performance</div>
+            <div class="mc-title">TREND WATCHER</div>
+            <p>Gut für Audience Building</p>
+          </div>
+          <div class="matrix-cell">
+            <div class="mc-label">Hoch Resonanz · Niedrig Performance</div>
+            <div class="mc-title">AUTHENTIC</div>
+            <p>Gut für Brand Building</p>
+          </div>
+          <div class="matrix-cell">
+            <div class="mc-label">Niedrig · Niedrig</div>
+            <div class="mc-title">SKIP</div>
+            <p>Zeitverschwendung</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Account analysieren & Strategie erstellen</div>
+        <div class="field"><label>Wo stehst du gerade?</label><textarea id="strStatus" placeholder="z.B. 800 Follower IG, kaum Engagement, 0 auf LinkedIn, unregelmässig..."></textarea></div>
+        <div class="field"><label>Dein Ziel in 90 Tagen</label><input type="text" id="strGoal" placeholder="z.B. 5000 Follower, 3 Klienten/Monat"/></div>
+        <div class="field"><label>Was hat funktioniert / nicht funktioniert?</label><textarea id="strHistory" placeholder="z.B. Reels über Ernährung laufen gut, reine Trainings-Posts nicht..."></textarea></div>
+        <button class="btn btn-gold full" id="strBtn" onclick="generateStrategy()"><div class="spinner"></div><span>90-Tage Wachstumsstrategie</span></button>
+      </div>
+      <div class="err" id="strErr"></div>
+      <div id="strOut"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+// ─── STATE ──────────────────────────────────────────────────
+let postCount = 0, igCount = 0, liCount = 0, weekCount = 0;
+let adGoal = 'Leads & Anfragen generieren';
+let brandDNA = {};
+
+const DNA_FIELDS = [
+  'dna_man','dna_vision','dna_antivision','dna_message','dna_offer','dna_method',
+  'dna_p1','dna_p1s','dna_p2','dna_p2s','dna_p3','dna_p3s',
+  'dna_dreamfollower','dna_dreamwants','dna_clientstatus','dna_clienttransformation','dna_badfit'
+];
+
+// ─── NAVIGATION ─────────────────────────────────────────────
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ─── CHIPS ──────────────────────────────────────────────────
+function initChips(id, single = true) {
+  document.querySelectorAll('#' + id + ' .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      if (single) document.querySelectorAll('#' + id + ' .chip').forEach(x => x.classList.remove('on'));
+      c.classList.toggle('on');
+    });
+  });
+}
+initChips('platformChips', true);
+initChips('formatChips', true);
+initChips('funnelChips', true);
+initChips('pillarChips', true);
+initChips('emotionChips', true);
+initChips('repurposeChips', false);
+
+function getChip(id) { const a = document.querySelector('#' + id + ' .chip.on'); return a ? a.dataset.v : ''; }
+function getChips(id) { return [...document.querySelectorAll('#' + id + ' .chip.on')].map(c => c.dataset.v).join(', '); }
+
+function selectAdGoal(el, goal) {
+  document.querySelectorAll('#adGoalGrid .ad-format').forEach(e => e.classList.remove('on'));
+  el.classList.add('on'); adGoal = goal;
+}
+
+// ─── BRAND DNA PERSISTENCE ──────────────────────────────────
+async function saveDNA() {
+  const data = {};
+  DNA_FIELDS.forEach(k => { data[k] = document.getElementById(k)?.value || ''; });
+  try {
+    await window.storage.set('coachcedi_brand_dna', JSON.stringify(data));
+    brandDNA = data;
+    document.getElementById('saveStatus').textContent = '✓ Brand DNA gespeichert';
+    document.getElementById('saveStatus').classList.add('saved');
+    updateDNAStatus();
+    setTimeout(() => { document.getElementById('saveStatus').classList.remove('saved'); document.getElementById('saveStatus').textContent = 'Änderungen werden lokal gespeichert'; }, 3000);
+  } catch(e) {
+    document.getElementById('saveStatus').textContent = 'Fehler beim Speichern: ' + e.message;
+  }
+}
+
+async function loadDNA() {
+  try {
+    const result = await window.storage.get('coachcedi_brand_dna');
+    if (result && result.value) {
+      const data = JSON.parse(result.value);
+      DNA_FIELDS.forEach(k => { if (document.getElementById(k)) document.getElementById(k).value = data[k] || ''; });
+      brandDNA = data;
+      updateDNAStatus();
+    }
+  } catch(e) {
+    // not yet saved
+  }
+}
+
+function updateDNAStatus() {
+  const filled = DNA_FIELDS.filter(k => brandDNA[k] && brandDNA[k].trim().length > 0).length;
+  const el = document.getElementById('dnaStatus');
+  if (filled >= 10) {
+    el.className = 'dna-status ok';
+    el.innerHTML = '✓ Brand DNA aktiv<br>' + filled + '/' + DNA_FIELDS.length + ' Felder ausgefüllt';
+  } else if (filled > 0) {
+    el.className = 'dna-status empty';
+    el.innerHTML = '⚠ Nur ' + filled + '/' + DNA_FIELDS.length + ' ausgefüllt<br>Für beste Ergebnisse komplett füllen';
+  } else {
+    el.className = 'dna-status empty';
+    el.innerHTML = 'Brand DNA noch leer<br>Bitte zuerst ausfüllen';
+  }
+}
+
+function buildDNABlock() {
+  if (!brandDNA || Object.keys(brandDNA).length === 0) {
+    return 'COACH CÉDI BRAND-BASIS (Fallback):\n- Zielgruppe: Berufstätige Männer 28-45, Körpertransformation\n- Voice: direkt, authentisch, kein Bullshit, motivierend\n- USP: Transformation ohne Extreme, passend zum vollen Leben\n';
+  }
+  let s = '=== COACH CÉDI BRAND DNA ===\n';
+  if (brandDNA.dna_man) s += '\nDER MENSCH: ' + brandDNA.dna_man;
+  if (brandDNA.dna_vision) s += '\nVISION: ' + brandDNA.dna_vision;
+  if (brandDNA.dna_antivision) s += '\nANTI-VISION: ' + brandDNA.dna_antivision;
+  if (brandDNA.dna_message) s += '\nKERN-ÜBERZEUGUNGEN: ' + brandDNA.dna_message;
+  if (brandDNA.dna_offer) s += '\nANGEBOT: ' + brandDNA.dna_offer;
+  if (brandDNA.dna_method) s += '\nMETHODE: ' + brandDNA.dna_method;
+
+  s += '\n\nBRAND PILLARS:';
+  if (brandDNA.dna_p1) s += '\n1. MONEY-MAKING: ' + brandDNA.dna_p1 + (brandDNA.dna_p1s ? ' (Subtopics: ' + brandDNA.dna_p1s + ')' : '');
+  if (brandDNA.dna_p2) s += '\n2. GENUINE: ' + brandDNA.dna_p2 + (brandDNA.dna_p2s ? ' (Subtopics: ' + brandDNA.dna_p2s + ')' : '');
+  if (brandDNA.dna_p3) s += '\n3. DEVELOPMENTAL: ' + brandDNA.dna_p3 + (brandDNA.dna_p3s ? ' (Subtopics: ' + brandDNA.dna_p3s + ')' : '');
+
+  if (brandDNA.dna_dreamfollower || brandDNA.dna_dreamwants) {
+    s += '\n\nDREAM FOLLOWER:';
+    if (brandDNA.dna_dreamfollower) s += '\n- Profil: ' + brandDNA.dna_dreamfollower;
+    if (brandDNA.dna_dreamwants) s += '\n- Wünsche/Anti-Vision: ' + brandDNA.dna_dreamwants;
+  }
+
+  if (brandDNA.dna_clientstatus || brandDNA.dna_clienttransformation) {
+    s += '\n\nIDEAL CLIENT:';
+    if (brandDNA.dna_clientstatus) s += '\n- Aktuelle Situation: ' + brandDNA.dna_clientstatus;
+    if (brandDNA.dna_clienttransformation) s += '\n- Gewünschte Transformation: ' + brandDNA.dna_clienttransformation;
+    if (brandDNA.dna_badfit) s += '\n- Bad Fit: ' + brandDNA.dna_badfit;
+  }
+  return s + '\n';
+}
+
+// ─── FRAMEWORK LIBRARY (Founder Flow, Re-Hooks, Funnel) ─────
+const FOUNDER_FLOW = `STORY-STRUKTUR (Founder Flow Framework):
+1. CURIOSITY (0-3 Sek): Loop öffnen, der sofort Aufmerksamkeit fängt - Frage oder offenes Ende
+2. CONTEXT: Emotionale Verbindung - Zuschauer in den Moment bringen (Was/Wo/Wie gefühlt/gedacht)
+3. CHANGE: Den Wendepunkt enthüllen - Erkenntnis, Perspektivwechsel, neue Handlung
+4. CLOSE: Bedeutung landen - Lektion, Mindset-Shift, CTA`;
+
+const REHOOKS = `RE-HOOKS (alle 3-5 Sekunden einen einbauen):
+- Curiosity Triggers: "Aber hier ist die Wahrheit:..." / "Und dann ist etwas Verrücktes passiert:..."
+- Process Teases: "Und genau dann hat es klick gemacht:..." / "Hier ist was ich gelernt habe:..."
+- Contrast & Reversals: "Klingt gut, oder? War es nicht." / "Ich habe alles richtig gemacht und trotzdem versagt."
+- Stakes & Zeitdruck: "Ich hatte eine Woche, um das zu lösen" / "Das war meine letzte Chance"`;
+
+const FUNNEL_GUIDE = {
+  'Audience Building': `FUNNEL: AUDIENCE BUILDING (Top-of-Funnel)
+- Ziel: Aufmerksamkeit, Reichweite, neue Dream Follower
+- Ton: unterhaltsam, überraschend, edukativ für Anfänger, Pattern-Interrupts
+- Länge: kurz und knackig
+- CTA: sanft - Folgen, nicht verkaufen`,
+  'Brand Building': `FUNNEL: BRAND BUILDING (Middle-of-Funnel)
+- Ziel: Vertrauen vertiefen, emotionale Verbindung, Autorität+Identifikation+Bewunderung
+- Ton: persönlich, story-basiert, ehrlich, teilhaft
+- Länge: mittel bis lang - Story darf atmen
+- CTA: Dialog - Kommentare, DMs, Feedback`,
+  'Client Building': `FUNNEL: CLIENT BUILDING (Bottom-of-Funnel)
+- Ziel: Conversion - problem-awareness → solution → action
+- Ton: konkret, lösungsorientiert, mit Proof (Cases/Testimonials/Frameworks)
+- Länge: länger - Objection-handling braucht Raum
+- CTA: direkt - Erstgespräch, DM, Link in Bio`
+};
+
+const EMOTION_GUIDE = {
+  'Authority': `GEWÜNSCHTE WIRKUNG: AUTORITÄT
+- "Diese Person weiss wovon sie spricht"
+- Formate: Teaching-Style, Frameworks zeigen, Daten, klare Lehre
+- Sprache: strukturiert, klar, selbstsicher, Fach-Vokabular wo sinnvoll`,
+  'Relatability': `GEWÜNSCHTE WIRKUNG: IDENTIFIKATION
+- "Diese Person ist wie ich"
+- Formate: Day-in-the-Life, POV, persönliche Stories, Raw iPhone, Unsicherheiten
+- Sprache: nahbar, alltäglich, verletzlich, ehrlich`,
+  'Admiration': `GEWÜNSCHTE WIRKUNG: BEWUNDERUNG
+- "Ich will werden wie diese Person"
+- Formate: Cinematic B-Roll, Voiceover, Montagen, Erfolgsgeschichten, Lifestyle
+- Sprache: inspirierend, klar, mit Vision, zeigt Standards`
+};
+
+// ─── API ────────────────────────────────────────────────────
+async function callClaude(prompt, btnId, errId, maxTokens) {
+  const btn = document.getElementById(btnId);
+  btn.classList.add('loading'); btn.disabled = true;
+  document.getElementById(errId).classList.remove('on');
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens || 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.content.filter(b => b.type === 'text').map(b => b.text).join('');
+  } catch(e) {
+    document.getElementById(errId).textContent = 'Fehler: ' + e.message;
+    document.getElementById(errId).classList.add('on');
+    return null;
+  } finally { btn.classList.remove('loading'); btn.disabled = false; }
+}
+
+// ─── CREATE CONTENT ─────────────────────────────────────────
+async function createContent() {
+  const topic = document.getElementById('cTopic').value.trim();
+  if (!topic) { alert('Bitte gib ein Thema ein.'); return; }
+  const platform = getChip('platformChips');
+  const format = getChip('formatChips');
+  const funnel = getChip('funnelChips');
+  const pillar = getChip('pillarChips');
+  const emotion = getChip('emotionChips');
+  const tone = document.getElementById('cTone').value;
+  const cta = document.getElementById('cCta').value;
+  const ctx = document.getElementById('cContext').value.trim();
+
+  const platformGuide = {
+    'Instagram': 'Instagram: emotional, visuell, kurze Sätze, starke Hooks, max. 2200 Zeichen Caption, 3-5 relevante Hashtags',
+    'LinkedIn': 'LinkedIn: professionell aber persönlich, Story-basiert, längere Absätze ok, wenig Hashtags, Fachkompetenz zeigen',
+    'Beide Plattformen': 'ERSTELLE ZWEI VERSIONEN: eine für Instagram und eine für LinkedIn (klar getrennt mit === INSTAGRAM VERSION === und === LINKEDIN VERSION ===)'
+  };
+
+  const useFounderFlow = format.includes('Reel') || format.includes('Carousel') || format.includes('Caption');
+  const useRehooks = format.includes('Reel');
+
+  const prompt = `Du bist Coach Cédis Senior Content Strategist. Erstelle ${format} für ${platform}.
+
+${buildDNABlock()}
+
+=== CONTENT-BRIEFING ===
+THEMA: ${topic}
+BRAND PILLAR: ${pillar} (Content muss in diese Säule passen)
+${FUNNEL_GUIDE[funnel] || ''}
+
+${EMOTION_GUIDE[emotion] || ''}
+
+PLATTFORM-SPEC: ${platformGuide[platform] || platformGuide['Instagram']}
+TON: ${tone}
+CTA-ZIEL: ${cta}
+${ctx ? 'PERSÖNLICHE STORY/KONTEXT: ' + ctx : ''}
+
+=== INTEREST OVERLAP CHECK ===
+Bevor du schreibst, prüfe intern: Sitzt das Thema im Overlap zwischen "was Cédi genuin interessiert" UND "was sein Dream Follower wertvoll findet"? Wenn nein, justiere den Winkel so, dass es passt.
+
+${useFounderFlow ? '\n=== STORYTELLING-FRAMEWORK ===\n' + FOUNDER_FLOW + '\n\nNutze diese 4 Phasen als Gerüst für den Content.\n' : ''}
+${useRehooks ? '\n=== RE-HOOK REGEL ===\n' + REHOOKS + '\n' : ''}
+
+=== FORMAT-VORGABEN ===
+${getFormatInstructions(format)}
+
+${platform === 'Beide Plattformen' ? 'Erstelle BEIDE Versionen:\n=== INSTAGRAM VERSION ===\n[Vollständiger Content]\n\n=== LINKEDIN VERSION ===\n[Vollständiger Content]' : 'Erstelle den vollständigen ' + format + '.'}
+
+Antworte auf Deutsch. Direkt mit Content starten, keine Meta-Kommentare. Schreibe wie Cédi spricht (basierend auf Brand DNA), nicht wie eine generische Fitness-KI.`;
+
+  document.getElementById('createOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">✍️ Content wird erstellt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'createBtn', 'createErr', 2000);
+  if (!text) { document.getElementById('createOut').innerHTML = ''; return; }
+
+  postCount++; weekCount++;
+  if (platform.includes('Instagram')) igCount++;
+  if (platform.includes('LinkedIn')) liCount++;
+  if (platform === 'Beide Plattformen') { igCount++; liCount++; }
+  updateStats();
+
+  const out = document.getElementById('createOut');
+  out.innerHTML = '';
+
+  if (text.includes('=== INSTAGRAM VERSION ===') || text.includes('=== LINKEDIN VERSION ===')) {
+    const parts = text.split(/===\s*(INSTAGRAM|LINKEDIN) VERSION\s*===/i).filter(s => s.trim() && !['INSTAGRAM','LINKEDIN'].includes(s.trim()));
+    const labels = ['📸 Instagram Version', '💼 LinkedIn Version'];
+    parts.forEach((part, i) => {
+      out.appendChild(buildOutCard(labels[i] || 'Content', part));
+    });
+  } else {
+    const badge = '✅ ' + format + ' · ' + platform + ' · ' + funnel + ' · ' + emotion;
+    out.appendChild(buildOutCard(badge, text));
+  }
+}
+
+function getFormatInstructions(format) {
+  if (format.includes('Reel')) return 'REEL SCRIPT (45-60 Sek):\n- Hook in Sekunde 0-3\n- Schreibe WIE GESPROCHEN, nicht wie geschrieben\n- Pro Zeile 1 Satz oder Beat\n- Markiere B-Roll Vorschläge in [eckigen Klammern]\n- CTA klar am Ende';
+  if (format.includes('Carousel')) return 'CAROUSEL (7-9 SLIDES):\n- Slide 1: Hook (max 8 Wörter, scroll-stopping)\n- Slide 2: Problem/Frage\n- Slide 3-7: Value / Framework / Steps\n- Slide 8: Zusammenfassung / Takeaway\n- Slide 9: CTA\n- Jede Slide max 2-3 Zeilen';
+  if (format.includes('Caption')) return 'CAPTION:\n- Erste Zeile ist ein starker Hook (vor "mehr anzeigen")\n- Absätze mit Zeilenumbrüchen aufbrechen\n- Story → Value → CTA\n- Hashtags am Ende (3-5 relevante für IG, 2-3 für LinkedIn)';
+  if (format.includes('Story')) return 'STORY-SERIE (5-6 SLIDES):\n- Pro Slide eine klare Idee\n- Mindestens 1 Slide mit Poll/Slider/Frage (für Engagement)\n- Letzter Slide: DM-Prompt oder Link';
+  if (format.includes('Hook')) return '3 HOOK-VARIANTEN:\nPro Hook:\n- Den Hook-Text\n- Kurze Erklärung WARUM er funktioniert\n- Welcher Audience-Typ am stärksten reagiert\nVariante 1: Curiosity-based\nVariante 2: Contrarian/Provokativ\nVariante 3: Direkte Benefit-Aussage';
+  return 'Erstelle den Content vollständig.';
+}
+
+function buildOutCard(label, content) {
+  const card = document.createElement('div');
+  card.className = 'out-card';
+  const safe = esc(content);
+  card.innerHTML = '<div class="out-head"><div class="out-label">' + label + '</div><button class="btn btn-ghost sm" onclick="copy(this,`' + safe + '`)">Kopieren</button></div><div class="out-body">' + fmt(content) + '</div>';
+  return card;
+}
+
+// ─── QUICK WEEK PLAN ────────────────────────────────────────
+async function quickWeekPlan() {
+  const topic = document.getElementById('cTopic').value.trim() || 'Coach Cédi Kernthemen';
+
+  const prompt = `Du bist Coach Cédis Content-Planer. Erstelle einen 7-Post-Wochenplan für Instagram UND LinkedIn.
+
+${buildDNABlock()}
+
+FOKUS DIESER WOCHE: ${topic}
+
+REGEL: Verteile die 7 Posts balanciert über die 3 Brand Pillars UND die 3 Funnel Stages.
+- 3-4 Audience Building Posts (Reichweite)
+- 2-3 Brand Building Posts (Vertrauen)
+- 1-2 Client Building Posts (Conversion)
+
+Für jeden Tag:
+TAG [X] – [WOCHENTAG]
+PILLAR: [Welche Säule]
+FUNNEL: [Welche Stage]
+INSTAGRAM: [Format] | Thema | Hook (erster Satz)
+LINKEDIN: [Format] | Thema | Einstieg (erster Satz)
+
+Am Ende:
+ÜBERGREIFENDES WOCHEN-THEMA: [Roter Faden]
+POSTING-ZEITEN: [pro Plattform/Tag]
+
+Auf Deutsch. Praktisch, sofort umsetzbar, absolut on-brand für Coach Cédi.`;
+
+  document.getElementById('createOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">📅 Wochenplan wird erstellt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'createBtn', 'createErr', 2500);
+  if (!text) { document.getElementById('createOut').innerHTML = ''; return; }
+  const out = document.getElementById('createOut');
+  out.innerHTML = '';
+  out.appendChild(buildOutCard('📅 7-Tage Content-Plan', text));
+}
+
+// ─── REPURPOSE ──────────────────────────────────────────────
+async function repurposeContent() {
+  const original = document.getElementById('rOriginal').value.trim();
+  if (!original) { alert('Bitte füge deinen Original-Content ein.'); return; }
+  const formats = getChips('repurposeChips');
+  if (!formats) { alert('Bitte wähle mindestens ein Zielformat.'); return; }
+
+  const prompt = `Du bist Coach Cédis Content-Recycling-Experte. Wandle den Original-Content in mehrere Formate um.
+
+${buildDNABlock()}
+
+ORIGINAL-CONTENT:
+${original}
+
+ZIELFORMATE: ${formats}
+
+REGELN:
+- Jedes Format: eigener Abschnitt, getrennt durch "===FORMAT===" mit Format-Name als erste Zeile
+- Founder Flow beibehalten: Curiosity → Context → Change → Close
+- Für Reels: Re-Hooks alle 3-5 Sek einbauen
+- Plattform-spezifisch optimieren (IG: emotional/kurz; LinkedIn: professionell/Story)
+- Selbe Kernidee, aber unterschiedliche Winkel und Hooks pro Format
+
+${FOUNDER_FLOW}
+
+Auf Deutsch.`;
+
+  document.getElementById('repurposeOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">🔄 Content wird umgewandelt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'repurposeBtn', 'repurposeErr', 3000);
+  if (!text) { document.getElementById('repurposeOut').innerHTML = ''; return; }
+
+  const sections = text.split('===FORMAT===').filter(s => s.trim());
+  const out = document.getElementById('repurposeOut');
+  out.innerHTML = '';
+  sections.forEach((sec, i) => {
+    const firstLine = sec.trim().split('\n')[0];
+    out.appendChild(buildOutCard(firstLine || 'Format ' + (i+1), sec));
+  });
+}
+
+// ─── CALENDAR ───────────────────────────────────────────────
+async function generateCalendar() {
+  const ig = document.getElementById('calIg').value;
+  const li = document.getElementById('calLi').value;
+  const focus = document.getElementById('calFocus').value.trim();
+
+  const prompt = `Du bist Coach Cédis Content-Planer. Erstelle einen vollständigen Wochenplan.
+
+${buildDNABlock()}
+
+POSTING-FREQUENZ:
+- Instagram: ${ig} pro Woche
+- LinkedIn: ${li} pro Woche
+${focus ? '- Themen-Fokus: ' + focus : ''}
+
+REGELN (wichtig für Balance):
+- Verteile Posts ausgewogen über 3 Pillars (Money-Making/Genuine/Developmental)
+- Verteile über 3 Funnel-Stages (60% Audience, 30% Brand, 10% Client Building)
+- Jeder Post auf mindestens eine Pillar-Subtopic mappen
+
+Für JEDEN Post:
+TAG | PLATTFORM | FORMAT | UHRZEIT | PILLAR | FUNNEL | THEMA | HOOK (erster Satz) | HASHTAG-GRUPPE
+
+Am Ende:
+ÜBERGREIFENDES WOCHEN-NARRATIV: [Roter Faden über alle Posts]
+
+Auf Deutsch. Posting-Zeiten für berufstätige Männer optimieren (früh morgens, Lunch, nach Feierabend).`;
+
+  document.getElementById('calOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">📅 Wochenplan wird erstellt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'calBtn', 'calErr', 2500);
+  if (!text) { document.getElementById('calOut').innerHTML = ''; return; }
+  const out = document.getElementById('calOut');
+  out.innerHTML = '';
+  out.appendChild(buildOutCard('📅 Dein Wochenplan', text));
+}
+
+// ─── PUBLISH ────────────────────────────────────────────────
+async function preparePublish() {
+  const content = document.getElementById('pubContent').value.trim();
+  if (!content) { alert('Bitte füge deinen Content ein.'); return; }
+  const platform = document.getElementById('pubPlatform').value;
+  const goal = document.getElementById('pubGoal').value;
+
+  const prompt = `Du bist Coach Cédis Publishing-Experte. Optimiere diesen Content für maximale Performance.
+
+${buildDNABlock()}
+
+CONTENT:
+${content}
+
+PLATTFORM: ${platform}
+OPTIMIERUNGS-ZIEL: ${goal}
+
+Erstelle folgende Abschnitte (getrennt durch ---):
+
+OPTIMIERTER POST-TEXT:
+[Vollständig überarbeiteter Text - stärkerer Hook nach Founder Flow, klare Struktur, plattformoptimiert]
+
+---
+
+CAPTION-OPTIMIERUNG:
+- Hook-Verbesserung: [warum der Original-Hook schwach war und wie der neue funktioniert]
+- Re-Hook Einbau (falls Reel): [wo Re-Hooks eingebaut werden]
+- CTA-Optimierung: [konkreter Verbesserungsvorschlag]
+- Hashtags: [10-15 relevante, kategorisiert in Core/Niche/Community]
+
+---
+
+POSTING-EMPFEHLUNG:
+- Beste Zeit: [konkrete Uhrzeit + Wochentag basierend auf Zielgruppe]
+- Format-Tipp: [Reel/Carousel/Post + Begründung]
+- Erste-Stunden-Strategie: [Was in ersten 30-60 Min nach Posting tun]
+
+Auf Deutsch.`;
+
+  document.getElementById('pubOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">🚀 Wird optimiert<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'pubBtn', 'pubErr', 2000);
+  if (!text) { document.getElementById('pubOut').innerHTML = ''; return; }
+
+  const sections = text.split('---').map(s => s.trim()).filter(Boolean);
+  const labels = ['✅ Optimierter Post-Text', '📝 Caption-Optimierung', '📅 Posting-Empfehlung'];
+  const out = document.getElementById('pubOut');
+  out.innerHTML = '';
+  sections.forEach((sec, i) => out.appendChild(buildOutCard(labels[i] || 'Details', sec)));
+}
+
+// ─── ADS ────────────────────────────────────────────────────
+async function generateAds() {
+  const budget = document.getElementById('adBudget').value;
+  const platform = document.getElementById('adPlatform').value;
+  const offer = document.getElementById('adOffer').value.trim();
+  const usp = document.getElementById('adUsp').value.trim() || (brandDNA.dna_method || '');
+
+  if (!offer) { alert('Bitte fülle das Angebot-Feld aus.'); return; }
+
+  const prompt = `Du bist Coach Cédis Werbetexter und Ad-Stratege. Erstelle eine vollständige Werbekampagne.
+
+${buildDNABlock()}
+
+KAMPAGNEN-ZIEL: ${adGoal}
+PLATTFORM: ${platform}
+BUDGET: CHF/€ ${budget}/Monat
+ANGEBOT: ${offer}
+USP: ${usp}
+
+WICHTIG: Nutze das Ideal-Client-Profil aus der Brand DNA. Targeting muss auf diese Person exakt zugeschnitten sein.
+
+Erstelle folgende Abschnitte (getrennt durch ===):
+
+AD-TEXTE (3 Varianten):
+Für jede Variante:
+- Headline (max 40 Zeichen)
+- Primary Text (max 125 Zeichen) - Hook nach Founder Flow
+- Beschreibung
+- CTA-Button
+- Welcher Ideal-Client-Aspekt angesprochen wird
+
+===
+
+TARGETING-EMPFEHLUNG:
+Für ${platform} exakte Einstellungen (Alter, Geo, Interessen, Verhalten, Custom Audiences)
+Basierend auf dem Ideal-Client-Profil - je konkreter, desto besser.
+
+===
+
+BUDGET-VERTEILUNG:
+Wie CHF/€ ${budget} auf Kampagnentypen/Ads aufteilen. Testphase vs. Skalierung. Wann optimieren.
+
+===
+
+CREATIVES-BRIEFING:
+Was Video/Bild zeigen muss. Bildsprache die zur Brand passt. Do's und Don'ts. Länge/Format.
+
+===
+
+30-TAGE KAMPAGNEN-PLAN:
+Woche 1-4: Konkrete Schritte, Metriken, Optimierungs-Punkte.
+
+Auf Deutsch. Praxisnah und sofort umsetzbar.`;
+
+  document.getElementById('adOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">📣 Kampagne wird erstellt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'adBtn', 'adErr', 3000);
+  if (!text) { document.getElementById('adOut').innerHTML = ''; return; }
+
+  const sections = text.split('===').map(s => s.trim()).filter(Boolean);
+  const labels = ['💬 Ad-Texte (3 Varianten)', '🎯 Targeting', '💰 Budget-Verteilung', '🎨 Creatives-Briefing', '📅 30-Tage Plan'];
+  const out = document.getElementById('adOut');
+  out.innerHTML = '';
+  sections.forEach((sec, i) => out.appendChild(buildOutCard(labels[i] || 'Details', sec)));
+}
+
+// ─── STRATEGY ───────────────────────────────────────────────
+async function generateStrategy() {
+  const status = document.getElementById('strStatus').value.trim();
+  const goal = document.getElementById('strGoal').value.trim();
+  const history = document.getElementById('strHistory').value.trim();
+
+  if (!status) { alert('Bitte beschreibe deinen aktuellen Stand.'); return; }
+
+  const prompt = `Du bist Coach Cédis Senior Social-Media-Stratege. Erstelle eine 90-Tage Wachstumsstrategie.
+
+${buildDNABlock()}
+
+AKTUELLER STAND: ${status}
+90-TAGE-ZIEL: ${goal || '5000 Follower, 3 Klienten/Monat'}
+HISTORY (was lief): ${history || '-'}
+
+PLATTFORMEN: Instagram + LinkedIn (YouTube später)
+
+Erstelle folgende Abschnitte (getrennt durch ===):
+
+DIAGNOSE (nutze 4M-Framework-Linse):
+- Wo ist die Brand DNA stark positioniert, wo schwach?
+- Welche Pillars werden vernachlässigt?
+- Welche Funnel-Stage fehlt?
+- Gibt es Mismatch zwischen Dream Follower und tatsächlichem Content?
+
+===
+
+90-TAGE-STRATEGIE:
+Monat 1 (Fundament): Welche Pillars priorisieren, welche Formate testen, welche Metriken
+Monat 2 (Wachstum): Wo verdoppeln, welche Hebel ziehen, erste Client-Building Pushes
+Monat 3 (Monetarisierung): Wie Audience in Klienten konvertieren, welche Angebote testen
+
+===
+
+PERSONAL PERFORMANCE MATRIX ANWENDUNG:
+Konkret: Welche Content-Ideen sind für Cédi GOLD (high resonance + performance)? Welche TREND WATCHER? Welche AUTHENTIC? Gib 5-10 spezifische Ideen-Beispiele pro Kategorie.
+
+===
+
+WÖCHENTLICHE ROUTINE (Zeitbudget):
+Konkreter Plan was Cédi wöchentlich tun muss in Stunden:
+- Content-Produktion
+- Engagement/Community
+- Analyse/Optimierung
+- Ideation
+
+===
+
+TOP 5 WACHSTUMS-HACKS:
+Spezifisch für Coach Cédis Nische - Dinge die berufstätige Männer 28-45 triggern auf IG und LinkedIn.
+
+Auf Deutsch. Konkret, keine Allgemeinplätze.`;
+
+  document.getElementById('strOut').innerHTML = '<div class="out-card"><div class="out-head"><div class="out-label">📊 Strategie wird erstellt<span class="ldots"></span></div></div></div>';
+  const text = await callClaude(prompt, 'strBtn', 'strErr', 3500);
+  if (!text) { document.getElementById('strOut').innerHTML = ''; return; }
+
+  const sections = text.split('===').map(s => s.trim()).filter(Boolean);
+  const labels = ['🔍 Diagnose (4M-Linse)', '🗺️ 90-Tage-Strategie', '💎 Performance Matrix', '📋 Wöchentliche Routine', '⚡ Wachstums-Hacks'];
+  const out = document.getElementById('strOut');
+  out.innerHTML = '';
+  sections.forEach((sec, i) => out.appendChild(buildOutCard(labels[i] || 'Details', sec)));
+}
+
+// ─── UTILS ──────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('s-posts').textContent = postCount;
+  document.getElementById('s-ig').textContent = igCount;
+  document.getElementById('s-li').textContent = liCount;
+  document.getElementById('s-week').textContent = weekCount;
+}
+function fmt(t) {
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^(#+\s.+)$/gm,'<strong style="color:var(--gold)">$1</strong>').replace(/\n/g,'<br>');
+}
+function esc(s) {
+  return (s||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+}
+async function copy(btn, text) {
+  await navigator.clipboard.writeText(text);
+  const o = btn.textContent;
+  btn.textContent = '✓'; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = o; btn.classList.remove('ok'); }, 2000);
+}
+
+// ─── INIT ───────────────────────────────────────────────────
+loadDNA();
+</script>
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Lead Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #090909;
+    --card: #131313;
+    --card2: #1c1c1c;
+    --border: #252525;
+    --gold: #ff6b1a;
+    --gold-dim: rgba(255,107,26,0.12);
+    --white: #f0ebe0;
+    --muted: #635e58;
+    --green: #3fa86e;
+    --green-dim: rgba(63,168,110,0.12);
+    --red: #c0473a;
+    --red-dim: rgba(192,71,58,0.12);
+    --blue: #4a8fd4;
+    --blue-dim: rgba(74,143,212,0.12);
+    --orange: #d4834a;
+    --orange-dim: rgba(212,131,74,0.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(255,107,26,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+  .app{position:relative;z-index:1;display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--card);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column;gap:0;position:sticky;top:0;height:100vh}
+  .sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border)}
+  .logo-text{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:0.08em;color:var(--gold);line-height:1}
+  .logo-sub{font-size:0.6rem;color:var(--muted);letter-spacing:0.18em;text-transform:uppercase;margin-top:3px}
+  .nav{padding:20px 12px;flex:1}
+  .nav-label{font-size:0.58rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:8px;margin-top:16px}
+  .nav-label:first-child{margin-top:0}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;font-size:0.84rem;font-weight:500;color:var(--muted);border:1px solid transparent}
+  .nav-item:hover{background:var(--card2);color:var(--white)}
+  .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(255,107,26,0.2)}
+  .nav-icon{font-size:1rem;min-width:20px;text-align:center}
+  .nav-badge{margin-left:auto;background:var(--gold);color:var(--black);font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:20px}
+
+  /* MAIN */
+  .main{padding:36px 40px;overflow-y:auto}
+  .page{display:none}
+  .page.active{display:block;animation:fadeIn 0.25s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .page-header{margin-bottom:32px}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.08em;color:var(--white);line-height:1}
+  .page-subtitle{font-size:0.8rem;color:var(--muted);margin-top:6px;letter-spacing:0.04em}
+
+  /* STATS ROW */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:18px 20px}
+  .stat-label{font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .stat-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.04em;line-height:1}
+  .stat-sub{font-size:0.72rem;color:var(--muted);margin-top:4px}
+  .v-gold{color:var(--gold)} .v-green{color:var(--green)} .v-blue{color:var(--blue)} .v-orange{color:var(--orange)}
+
+  /* SECTION */
+  .section-label{font-size:0.6rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:22px;margin-bottom:16px}
+  .card2{background:var(--card2);border:1px solid var(--border);border-radius:2px;padding:18px;margin-bottom:12px}
+
+  /* FIELDS */
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{font-size:0.67rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  input,textarea,select{background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 13px;border-radius:2px;outline:none;transition:border-color 0.2s;width:100%}
+  input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+  select option{background:#1a1a1a}
+  textarea{resize:vertical;min-height:80px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+  /* CHIP */
+  .chip-wrap{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{background:var(--black);border:1px solid var(--border);color:var(--muted);font-size:0.7rem;font-weight:500;letter-spacing:0.06em;padding:6px 12px;border-radius:2px;cursor:pointer;transition:all 0.15s}
+  .chip:hover{border-color:var(--gold);color:var(--gold)}
+  .chip.on{background:var(--gold);border-color:var(--gold);color:var(--black)}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:2px;cursor:pointer;transition:all 0.2s;border:none;letter-spacing:0.04em}
+  .btn-gold{background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.14em;padding:14px 24px}
+  .btn-gold:hover:not(:disabled){background:#dbb95a;transform:translateY(-1px)}
+  .btn-gold:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+  .btn-gold.full{width:100%;justify-content:center}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.76rem;padding:8px 14px}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-ghost.sm{padding:5px 10px;font-size:0.68rem}
+  .btn-ghost.ok{border-color:var(--green);color:var(--green)}
+  .spinner{width:15px;height:15px;border:2px solid rgba(0,0,0,0.25);border-top-color:var(--black);border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+  .btn-gold.loading .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* LEAD TABLE */
+  .lead-table{width:100%;border-collapse:collapse}
+  .lead-table th{font-size:0.58rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  .lead-table td{padding:12px 12px;font-size:0.84rem;border-bottom:1px solid rgba(37,37,37,0.6);vertical-align:middle}
+  .lead-table tr:last-child td{border-bottom:none}
+  .lead-table tr:hover td{background:rgba(255,107,26,0.02)}
+  .lead-name{font-weight:600;color:var(--white)}
+  .lead-detail{font-size:0.72rem;color:var(--muted);margin-top:2px}
+
+  .score-bar{display:flex;align-items:center;gap:8px}
+  .score-track{height:4px;background:var(--border);border-radius:2px;flex:1;overflow:hidden}
+  .score-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+  .score-num{font-size:0.72rem;font-weight:700;min-width:28px;text-align:right}
+
+  .stage-badge{display:inline-block;font-size:0.58rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+  .s-new{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,143,212,0.25)}
+  .s-qualified{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,168,110,0.25)}
+  .s-warm{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(212,131,74,0.25)}
+  .s-closed{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(255,107,26,0.25)}
+  .s-cold{background:var(--red-dim);color:var(--red);border:1px solid rgba(192,71,58,0.25)}
+
+  /* OUTPUT */
+  .out-card{background:var(--card);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:14px;animation:fadeIn 0.3s ease}
+  .out-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(255,107,26,0.03)}
+  .out-label{font-size:0.6rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold)}
+  .out-body{padding:18px;font-size:0.86rem;line-height:1.8;color:#ccc8c0;white-space:pre-wrap}
+  .out-body strong{color:var(--white)}
+
+  .err{background:var(--red-dim);border:1px solid rgba(192,71,58,0.3);color:#e88;padding:12px 16px;border-radius:2px;font-size:0.84rem;display:none;margin-bottom:14px}
+  .err.on{display:block}
+  .info-box{background:var(--gold-dim);border:1px solid rgba(255,107,26,0.2);border-radius:2px;padding:14px 18px;font-size:0.83rem;color:#d4cfc8;line-height:1.65;margin-bottom:16px}
+  .info-box strong{color:var(--gold)}
+
+  /* PIPELINE */
+  .pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+  .pipe-col{background:var(--card);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+  .pipe-head{padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.6rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase}
+  .pipe-head.ph-new{color:var(--blue)} .pipe-head.ph-warm{color:var(--orange)} .pipe-head.ph-qualified{color:var(--green)} .pipe-head.ph-closed{color:var(--gold)} .pipe-head.ph-cold{color:var(--red)}
+  .pipe-body{padding:10px;min-height:80px;display:flex;flex-direction:column;gap:6px}
+  .pipe-card{background:var(--black);border:1px solid var(--border);border-radius:2px;padding:8px 10px;font-size:0.75rem}
+  .pipe-card-name{font-weight:600;color:var(--white);margin-bottom:2px}
+  .pipe-card-sub{color:var(--muted);font-size:0.68rem}
+
+  /* AUTOMATION */
+  .auto-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(37,37,37,0.6)}
+  .auto-row:last-child{border-bottom:none;padding-bottom:0}
+  .auto-icon{font-size:1.4rem;min-width:32px;text-align:center}
+  .auto-info{flex:1}
+  .auto-name{font-weight:600;font-size:0.88rem;color:var(--white);margin-bottom:2px}
+  .auto-desc{font-size:0.76rem;color:var(--muted);line-height:1.5}
+  .toggle{width:40px;height:22px;background:var(--border);border-radius:20px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+  .toggle.on{background:var(--green)}
+  .toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.2s}
+  .toggle.on::after{left:21px}
+
+  /* LOADING DOTS */
+  .ldots::after{content:'.';animation:ldots 1s infinite}
+  @keyframes ldots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+
+  @media(max-width:700px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .stats-row{grid-template-columns:1fr 1fr}
+    .pipeline{grid-template-columns:1fr}
+    .field-row,.field-row-3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">Coach Cédi</div>
+      <div class="logo-sub">Lead Intelligence</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Pipeline</div>
+      <div class="nav-item active" onclick="nav('generate')"><span class="nav-icon">🎯</span>Lead Generierung</div>
+      <div class="nav-item" onclick="nav('qualify')"><span class="nav-icon">⚡</span>Qualifizierung<span class="nav-badge" id="qBadge">0</span></div>
+      <div class="nav-item" onclick="nav('pipeline')"><span class="nav-icon">📊</span>Pipeline</div>
+      <div class="nav-label">Automation</div>
+      <div class="nav-item" onclick="nav('automate')"><span class="nav-icon">🤖</span>Workflows</div>
+      <div class="nav-item" onclick="nav('outreach')"><span class="nav-icon">💌</span>Outreach</div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PAGE: GENERATE -->
+    <div class="page active" id="page-generate">
+      <div class="page-header">
+        <div class="page-title">Lead Generierung</div>
+        <div class="page-subtitle">KI findet, analysiert und bewertet potenzielle Klienten für Coach Cédi</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Leads Total</div><div class="stat-value v-gold" id="s-total">0</div><div class="stat-sub">Alle erfassten Leads</div></div>
+        <div class="stat-card"><div class="stat-label">Qualifiziert</div><div class="stat-value v-green" id="s-qual">0</div><div class="stat-sub">Score ≥ 70</div></div>
+        <div class="stat-card"><div class="stat-label">In Pipeline</div><div class="stat-value v-blue" id="s-pipe">0</div><div class="stat-sub">Aktiv bearbeitet</div></div>
+        <div class="stat-card"><div class="stat-label">Conversion</div><div class="stat-value v-orange" id="s-conv">0%</div><div class="stat-sub">Lead → Klient</div></div>
+      </div>
+
+      <div class="info-box">
+        <strong>Wie es funktioniert:</strong> Füge einen Lead manuell ein (z.B. aus Instagram-Kommentar, DM oder Empfehlung) oder beschreibe deine Zielgruppe – die KI erstellt sofort eine Outreach-Strategie, bewertet das Potenzial und schlägt den nächsten Schritt vor.
+      </div>
+
+      <div class="card">
+        <div class="section-label">Neuen Lead erfassen</div>
+        <div class="field-row">
+          <div class="field"><label>Name</label><input type="text" id="lName" placeholder="z.B. Marco Bauer"/></div>
+          <div class="field"><label>Plattform / Quelle</label>
+            <select id="lSource">
+              <option value="Instagram">Instagram</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Empfehlung">Empfehlung</option>
+              <option value="Website">Website</option>
+              <option value="Sonstiges">Sonstiges</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Beruf / Kontext</label><input type="text" id="lJob" placeholder="z.B. Unternehmensberater, 34 Jahre"/></div>
+          <div class="field"><label>Wie hat er reagiert?</label>
+            <select id="lSignal">
+              <option value="Hat einen Post geliked und kommentiert">Post geliked & kommentiert</option>
+              <option value="Hat eine Frage gestellt">Frage gestellt</option>
+              <option value="Hat eine DM geschickt">DM geschickt</option>
+              <option value="Hat sich für Newsletter eingetragen">Newsletter eingetragen</option>
+              <option value="Empfehlung von bestehendem Klienten">Empfehlung erhalten</option>
+              <option value="Hat gezielt nach Coaching gefragt">Direkt nach Coaching gefragt</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Notizen / was weißt du über ihn?</label><textarea id="lNotes" placeholder="z.B. Wirkt gestresst, hat über Gewichtszunahme geschrieben, folgt mir seit 3 Monaten..."></textarea></div>
+        <div class="field"><label>Sein wahrscheinliches Ziel</label>
+          <div class="chip-wrap" id="goalChips">
+            <div class="chip on" data-v="Fettabbau">Fettabbau</div>
+            <div class="chip" data-v="Muskelaufbau">Muskelaufbau</div>
+            <div class="chip" data-v="Mehr Energie & Leistung">Energie & Performance</div>
+            <div class="chip" data-v="Lifestyle-Veränderung">Lifestyle</div>
+            <div class="chip" data-v="unklar">Unklar</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-gold" id="genBtn" onclick="generateLead()"><div class="spinner"></div><span>Lead analysieren & Strategie erstellen</span></button>
+          <button class="btn btn-ghost" onclick="bulkMode()">📋 Bulk: Zielgruppe definieren</button>
+        </div>
+      </div>
+
+      <div class="err" id="genErr"></div>
+      <div id="genOut"></div>
+    </div>
+
+    <!-- PAGE: QUALIFY -->
+    <div class="page" id="page-qualify">
+      <div class="page-header">
+        <div class="page-title">Lead Qualifizierung</div>
+        <div class="page-subtitle">KI bewertet Kauf-Bereitschaft, Fit und Priorität jedes Leads</div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Lead qualifizieren</div>
+        <div class="field-row">
+          <div class="field"><label>Lead Name</label><input type="text" id="qName" placeholder="z.B. Thomas Müller"/></div>
+          <div class="field"><label>Kontakt seit</label>
+            <select id="qDuration">
+              <option>Erster Kontakt heute</option>
+              <option>1–2 Wochen</option>
+              <option>1 Monat</option>
+              <option>2–3 Monate</option>
+              <option>Länger als 3 Monate</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Bisherige Interaktionen (alles eintragen)</label><textarea id="qHistory" placeholder="z.B. Hat 3x kommentiert, eine DM geschickt mit 'Wie machst du das?', hat meinen letzten Reel geteilt, fragt nach Preisen..."></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Geschätzte Kaufkraft</label>
+            <select id="qBudget">
+              <option value="hoch">Hoch (Berufstätig, gutes Einkommen)</option>
+              <option value="mittel">Mittel (Angestellt, Budget vorhanden)</option>
+              <option value="niedrig">Niedrig / Unbekannt</option>
+            </select>
+          </div>
+          <div class="field"><label>Dringlichkeit / Pain Level</label>
+            <select id="qPain">
+              <option value="hoch">Hoch – spricht aktiv über Problem</option>
+              <option value="mittel">Mittel – zeigt Interesse</option>
+              <option value="niedrig">Niedrig – passiver Follower</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Hat er Einwände gezeigt?</label><input type="text" id="qObjection" placeholder="z.B. Zu teuer, keine Zeit, muss erst nachdenken..."/></div>
+        <button class="btn btn-gold full" id="qBtn" onclick="qualifyLead()"><div class="spinner"></div><span>Lead qualifizieren</span></button>
+      </div>
+
+      <div class="err" id="qErr"></div>
+      <div id="qOut"></div>
+    </div>
+
+    <!-- PAGE: PIPELINE -->
+    <div class="page" id="page-pipeline">
+      <div class="page-header">
+        <div class="page-title">Pipeline Übersicht</div>
+        <div class="page-subtitle">Alle Leads auf einen Blick – nach Stage sortiert</div>
+      </div>
+
+      <div class="pipeline" id="pipelineBoard">
+        <div class="pipe-col"><div class="pipe-head ph-new">🔵 Neu</div><div class="pipe-body" id="pipe-new"></div></div>
+        <div class="pipe-col"><div class="pipe-head ph-warm">🟠 Warm</div><div class="pipe-body" id="pipe-warm"></div></div>
+        <div class="pipe-col"><div class="pipe-head ph-qualified">🟢 Qualifiziert</div><div class="pipe-body" id="pipe-qualified"></div></div>
+        <div class="pipe-col"><div class="pipe-head ph-closed">🏆 Gewonnen</div><div class="pipe-body" id="pipe-closed"></div></div>
+        <div class="pipe-col"><div class="pipe-head ph-cold">❄️ Kalt</div><div class="pipe-body" id="pipe-cold"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Lead-Liste</div>
+        <table class="lead-table" id="leadTable">
+          <thead><tr><th>Name</th><th>Quelle</th><th>Score</th><th>Stage</th><th>Nächste Aktion</th></tr></thead>
+          <tbody id="leadTbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">Noch keine Leads erfasst. Starte mit der Lead Generierung.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: AUTOMATE -->
+    <div class="page" id="page-automate">
+      <div class="page-header">
+        <div class="page-title">Automatisierungs-Workflows</div>
+        <div class="page-subtitle">KI-gesteuerte Prozesse die für dich arbeiten – 24/7</div>
+      </div>
+
+      <div class="info-box">
+        <strong>So funktioniert's:</strong> Aktiviere Workflows per Toggle. Die KI erkennt Trigger und führt Aktionen automatisch aus. Du bekommst nur noch eine Benachrichtigung zur Genehmigung.
+      </div>
+
+      <div class="card">
+        <div class="section-label">Lead-Automatisierung</div>
+        <div class="auto-row">
+          <div class="auto-icon">📥</div>
+          <div class="auto-info"><div class="auto-name">Auto-Erfassung aus Gmail</div><div class="auto-desc">Neue Mail mit Keyword "Coaching / Interesse / Anfrage" → automatisch als Lead erfasst & analysiert</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="auto-row">
+          <div class="auto-icon">⚡</div>
+          <div class="auto-info"><div class="auto-name">Auto-Qualifizierung</div><div class="auto-desc">Jeder neue Lead wird automatisch gescort. Score ≥ 70 → sofort in "Qualifiziert" verschoben</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="auto-row">
+          <div class="auto-icon">💌</div>
+          <div class="auto-info"><div class="auto-name">Sofort-Antwort auf Anfragen</div><div class="auto-desc">Lead schreibt per Mail → innerhalb 5 Min. personalisierte Antwort mit Mehrwert + Calendly-Link</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="auto-row">
+          <div class="auto-icon">🔄</div>
+          <div class="auto-info"><div class="auto-name">Follow-up Sequenz</div><div class="auto-desc">Kein Reply nach 3 Tagen → automatisches Follow-up. Nach 7 Tagen → zweites. Nach 14 → "Kalt" gesetzt</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="auto-row">
+          <div class="auto-icon">📊</div>
+          <div class="auto-info"><div class="auto-name">Wochen-Pipeline-Report</div><div class="auto-desc">Jeden Montag 8 Uhr: vollständiger Pipeline-Status per Mail an Coach Cédi</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Workflow jetzt manuell ausführen</div>
+        <div class="field"><label>Beschreibe was automatisiert werden soll</label><textarea id="autoDesc" placeholder="z.B. Schreibe allen Leads die seit 5 Tagen keine Antwort gegeben haben eine Follow-up Nachricht. Ton: freundlich, nicht aufdringlich, mit einem neuen Mehrwert-Tipp..."></textarea></div>
+        <button class="btn btn-gold" id="autoBtn" onclick="runAutomation()"><div class="spinner"></div><span>Workflow ausführen</span></button>
+      </div>
+      <div class="err" id="autoErr"></div>
+      <div id="autoOut"></div>
+    </div>
+
+    <!-- PAGE: OUTREACH -->
+    <div class="page" id="page-outreach">
+      <div class="page-header">
+        <div class="page-title">Outreach Generator</div>
+        <div class="page-subtitle">Personalisierte Nachrichten für jeden Lead – sofort copy-paste bereit</div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Nachricht generieren</div>
+        <div class="field-row">
+          <div class="field"><label>Lead Name</label><input type="text" id="oName" placeholder="Marco"/></div>
+          <div class="field"><label>Kanal</label>
+            <select id="oChannel">
+              <option>Instagram DM</option>
+              <option>LinkedIn Nachricht</option>
+              <option>E-Mail</option>
+              <option>WhatsApp</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Kontext über den Lead</label><textarea id="oContext" placeholder="z.B. Hat gestern meinen Reel über Skinny-Fat kommentiert mit 'Das bin ich 100%', ist ca. 32, wirkt berufstätig..."></textarea></div>
+        <div class="field"><label>Ziel dieser Nachricht</label>
+          <div class="chip-wrap" id="goalOutChips">
+            <div class="chip on" data-v="Erstkontakt herstellen">Erstkontakt</div>
+            <div class="chip" data-v="Termin für Erstgespräch buchen">Termin buchen</div>
+            <div class="chip" data-v="Vertrauen aufbauen mit Mehrwert">Vertrauen aufbauen</div>
+            <div class="chip" data-v="Einwand entkräften">Einwand entkräften</div>
+            <div class="chip" data-v="Angebot unterbreiten">Angebot machen</div>
+          </div>
+        </div>
+        <button class="btn btn-gold full" id="oBtn" onclick="generateOutreach()"><div class="spinner"></div><span>Nachricht generieren</span></button>
+      </div>
+      <div class="err" id="oErr"></div>
+      <div id="oOut"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+// ── STATE ──────────────────────────────────────────────────────
+const leads = [];
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+function nav(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'pipeline') renderPipeline();
+}
+
+// ── CHIPS ──────────────────────────────────────────────────────
+function initChips(id, single = true) {
+  document.querySelectorAll(`#${id} .chip`).forEach(c => {
+    c.addEventListener('click', () => {
+      if (single) document.querySelectorAll(`#${id} .chip`).forEach(x => x.classList.remove('on'));
+      c.classList.toggle('on');
+    });
+  });
+}
+initChips('goalChips', true);
+initChips('goalOutChips', true);
+
+function getChip(id) {
+  const a = document.querySelector(`#${id} .chip.on`);
+  return a ? a.dataset.v : '';
+}
+
+// ── API CALL ────────────────────────────────────────────────────
+async function callClaude(prompt, btnId, errId) {
+  const btn = document.getElementById(btnId);
+  btn.classList.add('loading'); btn.disabled = true;
+  document.getElementById(errId).classList.remove('on');
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.content.filter(b => b.type === 'text').map(b => b.text).join('');
+  } catch(e) {
+    document.getElementById(errId).textContent = 'Fehler: ' + e.message;
+    document.getElementById(errId).classList.add('on');
+    return null;
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+// ── LEAD GENERIEREN ─────────────────────────────────────────────
+async function generateLead() {
+  const name = document.getElementById('lName').value.trim() || 'Unbekannter Lead';
+  const source = document.getElementById('lSource').value;
+  const job = document.getElementById('lJob').value.trim();
+  const signal = document.getElementById('lSignal').value;
+  const notes = document.getElementById('lNotes').value.trim();
+  const goal = getChip('goalChips');
+
+  const prompt = `Du bist Coach Cédis Sales-Assistent. Analysiere diesen Lead und erstelle eine vollständige Strategie.
+
+LEAD-DATEN:
+- Name: ${name}
+- Quelle: ${source}
+- Beruf/Kontext: ${job || 'unbekannt'}
+- Signal/Aktion: ${signal}
+- Notizen: ${notes || '–'}
+- Wahrscheinliches Ziel: ${goal}
+
+Erstelle genau diese Abschnitte, getrennt durch ---:
+
+LEAD-ANALYSE:
+Kurze Einschätzung des Leads (Potenzial, wahrscheinliche Situation, Pain Points, Kaufbereitschaft). 3–5 Sätze.
+
+---
+
+LEAD-SCORE: [Zahl von 0–100] / STAGE: [Neu/Warm/Qualifiziert/Kalt]
+Begründung in 1–2 Sätzen warum dieser Score.
+
+---
+
+SOFORT-MASSNAHME:
+Was Coach Cédi JETZT (heute) tun soll. Konkret, 1 Aktion.
+
+---
+
+OUTREACH-NACHRICHT (${source}):
+Fertige, personalisierte Erstnachricht. Authentisch, kein Spam-Gefühl. Auf Deutsch. Unterschrift: Coach Cédi.
+
+---
+
+FOLLOW-UP PLAN:
+3 Schritte für die nächsten 2 Wochen wenn keine Antwort kommt.
+
+Antworte komplett auf Deutsch.`;
+
+  document.getElementById('genOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">⏳ Analyse läuft<span class="ldots"></span></div></div><div class="out-body" style="color:var(--muted)">KI analysiert Lead-Potenzial...</div></div>`;
+
+  const text = await callClaude(prompt, 'genBtn', 'genErr');
+  if (!text) { document.getElementById('genOut').innerHTML = ''; return; }
+
+  // Extract score
+  const scoreMatch = text.match(/LEAD-SCORE:\s*(\d+)/i);
+  const stageMatch = text.match(/STAGE:\s*([\w]+)/i);
+  const score = scoreMatch ? parseInt(scoreMatch[1]) : 50;
+  const stage = stageMatch ? stageMatch[1].toLowerCase() : 'neu';
+
+  // Save lead
+  leads.push({ name, source, job, score, stage, notes, nextAction: '', raw: text });
+  updateStats();
+  updateQBadge();
+
+  renderLeadOutput(text, name, score, stage);
+}
+
+function renderLeadOutput(text, name, score, stage) {
+  const sections = text.split('---').map(s => s.trim()).filter(Boolean);
+  const labels = ['🔍 Lead-Analyse', '📊 Score & Stage', '⚡ Sofort-Massnahme', '💬 Outreach-Nachricht', '🔄 Follow-up Plan'];
+  const out = document.getElementById('genOut');
+  out.innerHTML = '';
+
+  sections.forEach((sec, i) => {
+    const card = document.createElement('div');
+    card.className = 'out-card';
+    card.innerHTML = `
+      <div class="out-head">
+        <div class="out-label">${labels[i] || 'Details'}</div>
+        <button class="btn btn-ghost sm" onclick="copy(this,\`${esc(sec)}\`)">Kopieren</button>
+      </div>
+      <div class="out-body">${fmt(sec)}</div>`;
+    out.appendChild(card);
+  });
+}
+
+// ── QUALIFIZIEREN ───────────────────────────────────────────────
+async function qualifyLead() {
+  const name = document.getElementById('qName').value.trim() || 'Lead';
+  const duration = document.getElementById('qDuration').value;
+  const history = document.getElementById('qHistory').value.trim();
+  const budget = document.getElementById('qBudget').value;
+  const pain = document.getElementById('qPain').value;
+  const objection = document.getElementById('qObjection').value.trim();
+
+  const prompt = `Du bist Coach Cédis Sales-Coach. Qualifiziere diesen Lead nach dem BANT-Framework (Budget, Authority, Need, Timeline) angepasst für ein Fitness-Coaching Business.
+
+LEAD: ${name}
+Kontakt seit: ${duration}
+Bisherige Interaktionen: ${history || '–'}
+Kaufkraft: ${budget}
+Dringlichkeit: ${pain}
+Einwände: ${objection || 'keine bekannt'}
+
+Erstelle folgende Abschnitte, getrennt durch ---:
+
+QUALIFIKATIONS-SCORE: [0–100]
+EMPFEHLUNG: [SOFORT ANGEHEN / NURTURING NÖTIG / ZURÜCKSTELLEN / DISQUALIFIZIEREN]
+
+---
+
+BANT-ANALYSE:
+- Budget: [Einschätzung]
+- Authority: [Entscheidet er selbst?]
+- Need: [Wie stark ist der Bedarf?]
+- Timeline: [Wann könnte er kaufen?]
+
+---
+
+EINWAND-HANDLING:
+Für jeden genannten Einwand: konkrete Antwort-Strategie die Coach Cédi verwenden kann.
+
+---
+
+NÄCHSTER SCHRITT:
+Genau 1 konkreter nächster Schritt mit Muster-Nachricht (copy-paste ready).
+
+Auf Deutsch antworten.`;
+
+  document.getElementById('qOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">⏳ Qualifizierung läuft<span class="ldots"></span></div></div></div>`;
+
+  const text = await callClaude(prompt, 'qBtn', 'qErr');
+  if (!text) { document.getElementById('qOut').innerHTML = ''; return; }
+
+  const sections = text.split('---').map(s => s.trim()).filter(Boolean);
+  const labels = ['📊 Qualifikations-Score & Empfehlung', '🎯 BANT-Analyse', '💬 Einwand-Handling', '⚡ Nächster Schritt'];
+  const out = document.getElementById('qOut');
+  out.innerHTML = '';
+  sections.forEach((sec, i) => {
+    const card = document.createElement('div');
+    card.className = 'out-card';
+    card.innerHTML = `
+      <div class="out-head">
+        <div class="out-label">${labels[i] || 'Details'}</div>
+        <button class="btn btn-ghost sm" onclick="copy(this,\`${esc(sec)}\`)">Kopieren</button>
+      </div>
+      <div class="out-body">${fmt(sec)}</div>`;
+    out.appendChild(card);
+  });
+}
+
+// ── AUTOMATION ──────────────────────────────────────────────────
+async function runAutomation() {
+  const desc = document.getElementById('autoDesc').value.trim();
+  if (!desc) { document.getElementById('autoErr').textContent = 'Bitte beschreibe den Workflow.'; document.getElementById('autoErr').classList.add('on'); return; }
+
+  const prompt = `Du bist Coach Cédis Automatisierungs-Assistent. Führe diesen Workflow aus oder erstelle einen konkreten Aktionsplan:
+
+WORKFLOW: ${desc}
+
+KONTEXT: Coach Cédi ist ein Fitness-Coach für berufstätige Männer. Aktuelle Leads: ${leads.length > 0 ? leads.map(l => l.name + ' (' + l.stage + ')').join(', ') : 'noch keine erfasst'}
+
+Erstelle:
+1. WORKFLOW-ANALYSE: Was genau soll passieren? Welche Schritte?
+2. SOFORT-AKTIONEN: Was kann Coach Cédi jetzt copy-paste ausführen?
+3. AUTOMATISIERUNGS-CODE (Make.com): Beschreibe den Workflow in Make.com Schritten (Module, Verbindungen)
+4. ERGEBNIS-ERWARTUNG: Was passiert wenn der Workflow läuft?
+
+Auf Deutsch, konkret und umsetzbar.`;
+
+  document.getElementById('autoOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">⏳ Workflow wird erstellt<span class="ldots"></span></div></div></div>`;
+  const text = await callClaude(prompt, 'autoBtn', 'autoErr');
+  if (!text) { document.getElementById('autoOut').innerHTML = ''; return; }
+
+  const out = document.getElementById('autoOut');
+  out.innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">🤖 Workflow-Plan</div><button class="btn btn-ghost sm" onclick="copy(this,\`${esc(text)}\`)">Kopieren</button></div><div class="out-body">${fmt(text)}</div></div>`;
+}
+
+// ── OUTREACH ────────────────────────────────────────────────────
+async function generateOutreach() {
+  const name = document.getElementById('oName').value.trim() || 'Lead';
+  const channel = document.getElementById('oChannel').value;
+  const ctx = document.getElementById('oContext').value.trim();
+  const goal = getChip('goalOutChips');
+
+  const prompt = `Du bist Coach Cédi – ein professioneller Fitness-Coach für berufstätige Männer. Schreibe eine Outreach-Nachricht.
+
+KANAL: ${channel}
+LEAD: ${name}
+KONTEXT: ${ctx || 'Follower / Interessent'}
+ZIEL: ${goal}
+
+Erstelle 2 Varianten der Nachricht (getrennt durch ---):
+
+VARIANTE A – Direkt & wertvoll:
+[Nachricht die sofort Mehrwert liefert, kein Sales-Druck]
+
+---
+
+VARIANTE B – Neugier wecken:
+[Nachricht die eine offene Frage stellt oder eine Herausforderung anspricht]
+
+Regeln: Kein generisches "Hey ich bin Coach und...". Persönlich, authentisch, auf den Kontext bezogen. Kurz (max. 5–7 Sätze). Kein übertriebener Emoji-Einsatz. Auf Deutsch.`;
+
+  document.getElementById('oOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">⏳ Nachrichten werden erstellt<span class="ldots"></span></div></div></div>`;
+  const text = await callClaude(prompt, 'oBtn', 'oErr');
+  if (!text) { document.getElementById('oOut').innerHTML = ''; return; }
+
+  const parts = text.split('---').map(s => s.trim()).filter(Boolean);
+  const out = document.getElementById('oOut');
+  out.innerHTML = '';
+  ['💬 Variante A – Direkt & Wertvoll', '🎯 Variante B – Neugier wecken'].forEach((label, i) => {
+    if (!parts[i]) return;
+    const card = document.createElement('div');
+    card.className = 'out-card';
+    card.innerHTML = `<div class="out-head"><div class="out-label">${label}</div><button class="btn btn-ghost sm" onclick="copy(this,\`${esc(parts[i])}\`)">Kopieren</button></div><div class="out-body">${fmt(parts[i])}</div>`;
+    out.appendChild(card);
+  });
+}
+
+// ── BULK MODE ────────────────────────────────────────────────────
+async function bulkMode() {
+  const desc = prompt('Beschreibe deine Zielgruppe (z.B. "Berufstätige Männer 30-45 auf LinkedIn, arbeiten in Zürich/München, Interesse an Fitness")');
+  if (!desc) return;
+
+  const prompt2 = `Du bist Coach Cédis Lead-Generation-Experte. Erstelle eine vollständige Strategie um neue Leads für ein Fitness-Coaching zu generieren.
+
+ZIELGRUPPE: ${desc}
+
+Erstelle:
+1. WHERE TO FIND THEM: Wo genau auf Instagram/LinkedIn diese Menschen zu finden sind (Hashtags, Gruppen, Communities, Profile)
+2. LEAD MAGNET IDEEN: 3 kostenlose Angebote/Inhalte die diese Gruppe anziehen
+3. OUTREACH-STRATEGIE: Schritt-für-Schritt wie Coach Cédi täglich 5 neue Leads generiert
+4. 30-TAGE-PLAN: Konkreter Plan für den ersten Monat (Woche für Woche)
+5. ERWARTBARE RESULTATE: Realistische Zahlen (Reichweite → Leads → Klienten)
+
+Auf Deutsch, konkret, umsetzbar.`;
+
+  document.getElementById('genOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">⏳ Strategie wird erstellt<span class="ldots"></span></div></div></div>`;
+  document.getElementById('genBtn').classList.add('loading'); document.getElementById('genBtn').disabled = true;
+
+  const text = await callClaude(prompt2, 'genBtn', 'genErr');
+  if (!text) { document.getElementById('genOut').innerHTML = ''; return; }
+  document.getElementById('genOut').innerHTML = `<div class="out-card"><div class="out-head"><div class="out-label">🎯 Lead-Generierungs-Strategie</div><button class="btn btn-ghost sm" onclick="copy(this,\`${esc(text)}\`)">Kopieren</button></div><div class="out-body">${fmt(text)}</div></div>`;
+}
+
+// ── PIPELINE ────────────────────────────────────────────────────
+function renderPipeline() {
+  ['new','warm','qualified','closed','cold'].forEach(s => document.getElementById('pipe-'+s).innerHTML = '');
+  const tbody = document.getElementById('leadTbody');
+  if (leads.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">Noch keine Leads erfasst.</td></tr>'; return; }
+
+  tbody.innerHTML = '';
+  leads.forEach(l => {
+    const scoreColor = l.score >= 70 ? 'var(--green)' : l.score >= 40 ? 'var(--orange)' : 'var(--red)';
+    const stageClass = { neu: 's-new', warm: 's-warm', qualifiziert: 's-qualified', gewonnen: 's-closed', kalt: 's-cold' }[l.stage.toLowerCase()] || 's-new';
+
+    tbody.innerHTML += `<tr>
+      <td><div class="lead-name">${l.name}</div><div class="lead-detail">${l.source} · ${l.job || '–'}</div></td>
+      <td><span style="font-size:0.78rem;color:var(--muted)">${l.source}</span></td>
+      <td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${l.score}%;background:${scoreColor}"></div></div><div class="score-num" style="color:${scoreColor}">${l.score}</div></div></td>
+      <td><span class="stage-badge ${stageClass}">${l.stage}</span></td>
+      <td><span style="font-size:0.78rem;color:var(--muted)">Siehe Analyse</span></td>
+    </tr>`;
+
+    const pipeKey = l.stage.toLowerCase() === 'qualifiziert' ? 'qualified' : l.stage.toLowerCase() === 'gewonnen' ? 'closed' : l.stage.toLowerCase() === 'kalt' ? 'cold' : l.stage.toLowerCase() === 'warm' ? 'warm' : 'new';
+    const pipeEl = document.getElementById('pipe-' + pipeKey);
+    if (pipeEl) pipeEl.innerHTML += `<div class="pipe-card"><div class="pipe-card-name">${l.name}</div><div class="pipe-card-sub">${l.source} · Score: ${l.score}</div></div>`;
+  });
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = leads.length;
+  document.getElementById('s-qual').textContent = leads.filter(l => l.score >= 70).length;
+  document.getElementById('s-pipe').textContent = leads.filter(l => !['kalt','gewonnen'].includes(l.stage.toLowerCase())).length;
+  const closed = leads.filter(l => l.stage.toLowerCase() === 'gewonnen').length;
+  document.getElementById('s-conv').textContent = leads.length > 0 ? Math.round(closed/leads.length*100) + '%' : '0%';
+}
+
+function updateQBadge() {
+  document.getElementById('qBadge').textContent = leads.length;
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function fmt(t) {
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^(#+\s.+)$/gm,'<strong style="color:var(--gold)">$1</strong>').replace(/\n/g,'<br>');
+}
+function esc(s) { return (s||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$'); }
+async function copy(btn, text) {
+  await navigator.clipboard.writeText(text);
+  const o = btn.textContent; btn.textContent = '✓'; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = o; btn.classList.remove('ok'); }, 2000);
+}
+</script>
+</body>
+</html>

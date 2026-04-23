@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – AI Company Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --card-hover: #1f1f1f;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --orange: #ff6b1a;
+    --orange-light: #ff8845;
+    --orange-dim: rgba(255,107,26,0.12);
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --muted-strong: #8a8580;
+    --green: #4caf7d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.08) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.4rem;
+    letter-spacing: 0.08em;
+    color: var(--orange);
+    line-height: 0.9;
+  }
+
+  .logo span { color: var(--white); }
+
+  .brand-sub {
+    font-size: 0.72rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+  }
+
+  /* Status strip */
+  .status-strip {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-strong);
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(76,175,125,0.5);
+  }
+
+  .status-value {
+    color: var(--white);
+    font-weight: 500;
+  }
+
+  /* Department nav */
+  .dept-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    width: fit-content;
+  }
+
+  .dept-nav a {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 2px;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .dept-nav a:hover { color: var(--orange); background: var(--black); }
+
+  /* Section */
+  .dept-section {
+    margin-bottom: 56px;
+    scroll-margin-top: 24px;
+  }
+
+  .dept-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dept-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.14em;
+    color: var(--white);
+  }
+
+  .dept-count {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--orange);
+    font-weight: 500;
+  }
+
+  .dept-desc {
+    font-size: 0.82rem;
+    color: var(--muted-strong);
+    margin-left: auto;
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+
+  /* Agent grid */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .agent-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 22px 22px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-strong);
+    transition: background 0.25s ease;
+  }
+
+  .agent-card:hover {
+    background: var(--card-hover);
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+  }
+
+  .agent-card:hover::before { background: var(--orange); }
+
+  .agent-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .agent-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+
+  .agent-badge {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--orange);
+    padding: 4px 8px;
+    border: 1px solid var(--orange-dim);
+    background: var(--orange-dim);
+    border-radius: 2px;
+  }
+
+  .agent-badge.new {
+    color: var(--green);
+    border-color: rgba(76,175,125,0.25);
+    background: rgba(76,175,125,0.08);
+  }
+
+  .agent-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.65rem;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+
+  .agent-role {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .agent-desc {
+    font-size: 0.87rem;
+    line-height: 1.55;
+    color: #c8c3bc;
+    flex-grow: 1;
+    margin-bottom: 16px;
+  }
+
+  .agent-cta {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .agent-card:hover .agent-cta { color: var(--orange); }
+
+  .arrow { transition: transform 0.2s; display: inline-block; }
+  .agent-card:hover .arrow { transform: translateX(4px); }
+
+  /* Quick-start guide */
+  .guide {
+    margin-top: 72px;
+    padding: 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  .guide-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.12em;
+    color: var(--orange);
+    margin-bottom: 18px;
+  }
+
+  .guide-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .guide-item h4 {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .guide-item p {
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--muted-strong);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 64px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 2;
+  }
+
+  .footer span { color: var(--orange); }
+
+  @media (max-width: 720px) {
+    .container { padding: 32px 18px 60px; }
+    .logo { font-size: 2.4rem; }
+    .brand-sub { padding-bottom: 4px; }
+    .dept-desc { display: none; }
+    .agent-grid { grid-template-columns: 1fr; }
+    .dept-nav { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+    .dept-nav a { white-space: nowrap; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="brand">
+      <div class="logo">Coach <span>Cédi</span></div>
+      <div class="brand-sub">AI Company · Mission Control</div>
+    </div>
+    <div class="status-strip">
+      <div class="status-item"><span class="status-dot"></span><span>Status: <span class="status-value">Operational</span></span></div>
+      <div class="status-item"><span>Workforce: <span class="status-value">11 Agents</span></span></div>
+      <div class="status-item"><span>Departments: <span class="status-value">4</span></span></div>
+      <div class="status-item"><span>Stack: <span class="status-value">Claude Sonnet 4</span></span></div>
+    </div>
+  </header>
+
+  <!-- Department navigation -->
+  <nav class="dept-nav">
+    <a href="#strategy">Strategy</a>
+    <a href="#marketing">Marketing</a>
+    <a href="#sales">Sales &amp; Outreach</a>
+    <a href="#success">Client Success</a>
+  </nav>
+
+  <!-- STRATEGY -->
+  <section class="dept-section" id="strategy">
+    <div class="dept-header">
+      <div class="dept-name">Strategy</div>
+      <div class="dept-count">3 Agents</div>
+      <div class="dept-desc">C-Suite · Führung, Zahlen, Ökonomie</div>
+    </div>
+    <div class="agent-grid">
+
+      <a class="agent-card" href="./coach-cedi-ceo-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">01</div>
+          <div class="agent-badge new">New</div>
+        </div>
+        <div class="agent-name">CEO</div>
+        <div class="agent-role">Strategy &amp; Prioritization</div>
+        <div class="agent-desc">Wochen-Briefings, Entscheidungen, Quartalsziele, Fokus-Reset. Priorisiert nach Hebelwirkung.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-analytics-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">02</div>
+          <div class="agent-badge new">New</div>
+        </div>
+        <div class="agent-name">Analytics</div>
+        <div class="agent-role">Numbers &amp; Insights</div>
+        <div class="agent-desc">Wochen- und Monats-Reports, Trend-Analyse, KPI-Deep-Dives. Sachlich, ohne Floskeln.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-finance-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">03</div>
+          <div class="agent-badge new">New</div>
+        </div>
+        <div class="agent-name">Finance</div>
+        <div class="agent-role">Pricing &amp; Economics</div>
+        <div class="agent-desc">Preis-Empfehlung, Tier-Struktur, Upsell-Logik, Marge-Check. CHF-fokussiert.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- MARKETING -->
+  <section class="dept-section" id="marketing">
+    <div class="dept-header">
+      <div class="dept-name">Marketing</div>
+      <div class="dept-count">4 Agents</div>
+      <div class="dept-desc">Reichweite, Content, Copy, Visual</div>
+    </div>
+    <div class="agent-grid">
+
+      <a class="agent-card" href="./coach-cedi-content-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">04</div>
+          <div class="agent-badge">Live</div>
+        </div>
+        <div class="agent-name">Content</div>
+        <div class="agent-role">Content Intelligence</div>
+        <div class="agent-desc">Reel-Skripte, Carousels, Captions, Hook-Varianten, Story-Serien.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-agent-v2.html">
+        <div class="agent-head">
+          <div class="agent-num">05</div>
+          <div class="agent-badge">Live v2</div>
+        </div>
+        <div class="agent-name">Social Media</div>
+        <div class="agent-role">Platform Strategy</div>
+        <div class="agent-desc">Plattform-Strategie und Posting-Rhythmus. Instagram- und YouTube-Planung.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-copywriter-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">06</div>
+          <div class="agent-badge new">New</div>
+        </div>
+        <div class="agent-name">Copywriter</div>
+        <div class="agent-role">Conversion Copy</div>
+        <div class="agent-desc">Sales-Mails, Nurture-Sequenzen, Landing-Copy, Ads, Cold-Outreach.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-designer-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">07</div>
+          <div class="agent-badge new">New</div>
+        </div>
+        <div class="agent-name">Designer</div>
+        <div class="agent-role">Visual Direction</div>
+        <div class="agent-desc">Slide-Layouts, Feed-Grid-Pläne, Typo-System, Brand-Audit.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- SALES & OUTREACH -->
+  <section class="dept-section" id="sales">
+    <div class="dept-header">
+      <div class="dept-name">Sales &amp; Outreach</div>
+      <div class="dept-count">3 Agents</div>
+      <div class="dept-desc">Akquise, Kommunikation, Research</div>
+    </div>
+    <div class="agent-grid">
+
+      <a class="agent-card" href="./coach-cedi-lead-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">08</div>
+          <div class="agent-badge">Live</div>
+        </div>
+        <div class="agent-name">Lead</div>
+        <div class="agent-role">Pipeline &amp; Qualifizierung</div>
+        <div class="agent-desc">Lead-Qualifizierung, Follow-up-Strategie, Pipeline-Übersicht.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-gmail-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">09</div>
+          <div class="agent-badge">Live</div>
+        </div>
+        <div class="agent-name">Gmail</div>
+        <div class="agent-role">Inbox &amp; Kommunikation</div>
+        <div class="agent-desc">E-Mail-Entwürfe, Antwort-Varianten, Inbox-Management.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+      <a class="agent-card" href="./coach-cedi-research-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">10</div>
+          <div class="agent-badge">Live</div>
+        </div>
+        <div class="agent-name">Research</div>
+        <div class="agent-role">Market &amp; Topic Intelligence</div>
+        <div class="agent-desc">Markt-, Wettbewerbs- und Themen-Recherche, aufbereitet für Entscheidungen.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- CLIENT SUCCESS -->
+  <section class="dept-section" id="success">
+    <div class="dept-header">
+      <div class="dept-name">Client Success</div>
+      <div class="dept-count">1 Agent</div>
+      <div class="dept-desc">Bestehende Klienten · Qualität &amp; Retention</div>
+    </div>
+    <div class="agent-grid">
+
+      <a class="agent-card" href="./coach-cedi-checkin-agent.html">
+        <div class="agent-head">
+          <div class="agent-num">11</div>
+          <div class="agent-badge">Live</div>
+        </div>
+        <div class="agent-name">Check-in</div>
+        <div class="agent-role">Weekly Client Review</div>
+        <div class="agent-desc">Wöchentliche Klienten-Auswertung, Fortschritts-Analyse, nächste Anpassungen.</div>
+        <div class="agent-cta">Launch <span class="arrow">→</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Quick start -->
+  <div class="guide">
+    <div class="guide-title">So arbeitest du mit dem Team</div>
+    <div class="guide-list">
+      <div class="guide-item">
+        <h4>Montag · CEO</h4>
+        <p>Wochen-Briefing erstellen. Top-3 Prioritäten, explizite Nein-Liste, KPI-Fokus.</p>
+      </div>
+      <div class="guide-item">
+        <h4>Wochentags · Content, Copy, Design</h4>
+        <p>Content-Agent liefert Ideen, Copywriter strafft Sales-Texte, Designer gibt Visual-Briefing.</p>
+      </div>
+      <div class="guide-item">
+        <h4>Laufend · Lead, Gmail, Research</h4>
+        <p>Neue Leads qualifizieren, Mails entwerfen, Themen recherchieren vor dem Posting.</p>
+      </div>
+      <div class="guide-item">
+        <h4>Wöchentlich · Check-in &amp; Analytics</h4>
+        <p>Klienten-Fortschritt auswerten, Wochen-Report ziehen, Entscheidungen fürs nächste Briefing festhalten.</p>
+      </div>
+      <div class="guide-item">
+        <h4>Monatlich · Finance</h4>
+        <p>Preis, Tier-Struktur, Marge durchrechnen. Anpassungen ans CEO-Briefing zurückspielen.</p>
+      </div>
+      <div class="guide-item">
+        <h4>Regel</h4>
+        <p>Jeder Agent erhält im Prompt deinen Kontext (Kapazität, Zahlen, Zielgruppe). Je konkreter der Input, desto schärfer der Output.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Coach Cédi <span>·</span> AI Company <span>·</span> v1.0<br>
+    Powered by Claude <span>·</span> Hosted independently
+  </div>
+
+</div>
+
+<script>
+  // Smooth department highlight on nav click
+  document.querySelectorAll('.dept-nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const targetId = link.getAttribute('href').slice(1);
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.style.transition = 'none';
+        target.style.background = 'rgba(255,107,26,0.04)';
+        setTimeout(() => {
+          target.style.transition = 'background 1.2s ease';
+          target.style.background = 'transparent';
+        }, 100);
+      }
+    });
+  });
+</script>
+</body>
+</html>

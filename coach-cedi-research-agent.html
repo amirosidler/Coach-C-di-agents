@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Cédi – Research Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #ff6b1a;
+    --gold-light: #ff8845;
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --green: #4caf7d;
+    --blue: #5599e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.07) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.08em; color: var(--gold); line-height: 1; }
+  .logo span { color: var(--white); }
+  .tagline { font-size: 0.72rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-left: auto; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 28px; margin-bottom: 20px; }
+  .section-label { font-size: 0.63rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+  .field label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  input, textarea, select {
+    background: var(--black); border: 1px solid var(--border); color: var(--white);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 11px 14px;
+    border-radius: 2px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  select option { background: var(--charcoal); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Quick topic chips */
+  .quick-topics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .topic-chip {
+    background: var(--black); border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.72rem; padding: 7px 12px; border-radius: 2px; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .topic-chip:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Output type chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--black); border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 14px; border-radius: 2px; cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--gold); color: var(--gold); }
+  .chip.active { background: var(--gold); border-color: var(--gold); color: var(--black); }
+
+  /* Button */
+  .btn-primary {
+    width: 100%; background: var(--gold); color: var(--black); border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.15em;
+    padding: 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: var(--black); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .btn-primary.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 500;
+    padding: 8px 14px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-ghost.copied { border-color: var(--green); color: var(--green); }
+
+  /* Progress */
+  .progress-bar-wrap { background: var(--border); border-radius: 2px; height: 3px; margin-bottom: 24px; display: none; overflow: hidden; }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+
+  .status-log { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; display: none; }
+  .status-log.visible { display: block; }
+  .status-item { padding: 4px 0; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  .status-dot.done { background: var(--green); }
+
+  /* Output */
+  .output-section { display: none; margin-top: 8px; }
+  .output-section.visible { display: block; }
+
+  .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .output-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.1em; color: var(--gold); }
+
+  .report-card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 16px; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .report-card-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); background: rgba(255,107,26,0.04); }
+  .report-card-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .report-card-body { padding: 24px; font-size: 0.9rem; line-height: 1.85; color: #d4cfc8; }
+  .report-card-body h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.08em; color: var(--white); margin: 20px 0 8px; border-left: 3px solid var(--gold); padding-left: 12px; }
+  .report-card-body h3 { font-size: 0.88rem; font-weight: 700; color: var(--gold-light); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .report-card-body strong { color: var(--white); font-weight: 600; }
+  .report-card-body ul { margin: 8px 0 12px 0; padding-left: 0; list-style: none; }
+  .report-card-body ul li { padding: 4px 0 4px 16px; position: relative; }
+  .report-card-body ul li::before { content: '▸'; position: absolute; left: 0; color: var(--gold); font-size: 0.7rem; top: 5px; }
+  .report-card-body a { color: var(--blue); text-decoration: none; }
+  .report-card-body a:hover { text-decoration: underline; }
+  .report-card-body p { margin-bottom: 10px; }
+
+  /* Key takeaway box */
+  .takeaway-box { background: rgba(255,107,26,0.06); border: 1px solid rgba(255,107,26,0.2); border-radius: 2px; padding: 16px 20px; margin: 16px 0; }
+  .takeaway-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+
+  .error-box { background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.3); color: #ff8080; padding: 14px 18px; border-radius: 2px; font-size: 0.88rem; display: none; margin-bottom: 16px; }
+  .error-box.visible { display: block; }
+
+  .footer-note { text-align: center; font-size: 0.68rem; color: var(--muted); margin-top: 48px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .logo { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- API KEY GATE (injected for deployment) -->
+  <div id="apiKeyGate" style="background:#1a1a1a;border:1px solid #2a2a2a;padding:20px;margin-bottom:28px;border-radius:2px">
+    <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#ff6b1a;margin-bottom:12px;font-weight:500">Anthropic API Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;min-width:220px;background:#0a0a0a;border:1px solid #2a2a2a;color:#f5f0e8;font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 12px;border-radius:2px;outline:none">
+      <button onclick="saveApiKey()" style="background:#ff6b1a;color:#0a0a0a;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;padding:10px 18px;border-radius:2px;cursor:pointer">SPEICHERN</button>
+      <button onclick="clearApiKey()" style="background:transparent;color:#6b6560;border:1px solid #2a2a2a;font-family:'DM Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-radius:2px;cursor:pointer">Löschen</button>
+    </div>
+    <div id="apiKeyStatus" style="margin-top:10px;font-size:0.78rem;color:#6b6560"></div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#6b6560;line-height:1.5">Key bleibt nur auf diesem Gerät (localStorage). Wird nie an Coach Cédi oder Dritte gesendet.</div>
+  </div>
+
+
+  <header>
+    <div class="logo">Coach <span>Cédi</span></div>
+    <div class="tagline">Web Research Agent</div>
+  </header>
+
+  <!-- Input -->
+  <div class="card">
+    <div class="section-label">Research Anfrage</div>
+
+    <div class="field">
+      <label>Thema / Frage</label>
+      <input type="text" id="query" placeholder="z.B. Aktuelle Studien zu Intermittent Fasting und Muskelerhalt..." />
+      <div class="quick-topics">
+        <div class="topic-chip" onclick="setQuery('Beste Supplement-Strategien für Muskelaufbau 2025')">💊 Supplements Muskelaufbau</div>
+        <div class="topic-chip" onclick="setQuery('Aktuelle Fitness-Trends auf Instagram und TikTok 2025')">📱 Fitness-Trends Social Media</div>
+        <div class="topic-chip" onclick="setQuery('Preisgestaltung Online Fitness Coaching Schweiz/Deutschland')">💰 Coaching Preise</div>
+        <div class="topic-chip" onclick="setQuery('Intermittent Fasting Studien Muskelerhalt')">🍽️ IF & Muskeln</div>
+        <div class="topic-chip" onclick="setQuery('Beste Strategien für Online Coaching Business aufbauen')">🚀 Coaching Business</div>
+        <div class="topic-chip" onclick="setQuery('Creatine Wirkung aktuelle Forschung 2024 2025')">🔬 Kreatin Forschung</div>
+      </div>
+    </div>
+
+    <div class="field-row" style="margin-top:8px">
+      <div class="field">
+        <label>Report-Typ</label>
+        <div class="chip-row" id="reportTypeChips">
+          <div class="chip active" data-val="deep">🔬 Deep Report</div>
+          <div class="chip" data-val="quick">⚡ Quick Summary</div>
+          <div class="chip" data-val="content">📱 Content-Ideen</div>
+          <div class="chip" data-val="compare">⚖️ Vergleich</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:8px">
+      <label>Kontext (optional)</label>
+      <input type="text" id="context" placeholder="z.B. Ich möchte einen Reel darüber machen / für ein Klientengespräch / Blogpost..." />
+    </div>
+
+    <button class="btn-primary" id="researchBtn" onclick="startResearch()" style="margin-top:8px">
+      <div class="spinner"></div>
+      <span>Research starten</span>
+    </button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="status-log" id="statusLog"></div>
+
+  <!-- Output -->
+  <div class="output-section" id="outputSection">
+    <div class="output-header">
+      <div class="output-title" id="outputTitle">Research Report</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost" onclick="copyReport()">Kopieren</button>
+        <button class="btn-ghost" onclick="resetResearch()">Neu</button>
+      </div>
+    </div>
+    <div id="reportContainer"></div>
+  </div>
+
+  <div class="footer-note">Coach Cédi · Web Research Agent · Powered by Claude AI + Web Search</div>
+</div>
+
+<script>
+  
+  // --- API Key Management (injected) ---
+  const API_KEY_STORAGE = 'coach_cedi_anthropic_key';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('apiKeyStatus').textContent = 'Ungültiger Key (muss mit sk-ant- beginnen).';
+      document.getElementById('apiKeyStatus').style.color = '#ff8080';
+      return;
+    }
+    localStorage.setItem(API_KEY_STORAGE, val);
+    document.getElementById('apiKeyInput').value = '••••••••••••••••' + val.slice(-6);
+    document.getElementById('apiKeyStatus').textContent = 'Key gespeichert. Du kannst jetzt generieren.';
+    document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Key gelöscht.';
+    document.getElementById('apiKeyStatus').style.color = '#6b6560';
+  }
+
+  // On load, check if key exists
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = getApiKey();
+    if (k) {
+      document.getElementById('apiKeyInput').value = '••••••••••••••••' + k.slice(-6);
+      document.getElementById('apiKeyStatus').textContent = 'Key ist gespeichert. Bereit.';
+      document.getElementById('apiKeyStatus').style.color = '#4caf7d';
+    } else {
+      document.getElementById('apiKeyStatus').textContent = 'Noch kein Key gespeichert. Bitte oben eintragen.';
+    }
+  });
+
+  // Patch fetch to inject headers for direct browser access
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) {
+      const key = getApiKey();
+      if (!key) {
+        return Promise.reject(new Error('Kein API-Key gespeichert. Bitte oben eintragen und speichern.'));
+      }
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      });
+    }
+    return _origFetch.call(this, url, opts);
+  };
+  // --- End API Key Management ---
+
+let lastReportText = '';
+
+  // Chips
+  document.querySelectorAll('#reportTypeChips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#reportTypeChips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  function getReportType() {
+    const active = document.querySelector('#reportTypeChips .chip.active');
+    return active ? active.dataset.val : 'deep';
+  }
+
+  function setQuery(q) {
+    document.getElementById('query').value = q;
+    document.getElementById('query').focus();
+  }
+
+  function buildPrompt(query, reportType, context) {
+    const ctx = context ? `\nVerwende-Kontext: ${context}` : '';
+
+    const typePrompts = {
+      deep: `Führe eine umfassende Web-Recherche zu diesem Thema durch und erstelle einen strukturierten Tiefenbericht.
+
+Struktur:
+## ZUSAMMENFASSUNG
+[3–4 Sätze Executive Summary]
+
+## KEY TAKEAWAY
+[Die wichtigste Erkenntnis in 1–2 Sätzen]
+
+## AKTUELLE ERKENNTNISSE
+[Die wichtigsten Fakten, Studien, Trends – mit Quellen wo möglich]
+
+## PRAXIS-RELEVANZ FÜR COACH CÉDI
+[Wie kann Coach Cédi (Fitness-Coach) diese Infos nutzen – konkrete Anwendung]
+
+## QUELLEN & WEITERFÜHRENDES
+[Wichtige Quellen oder Links wenn verfügbar]`,
+
+      quick: `Recherchiere schnell zum Thema und gib eine kompakte Zusammenfassung:
+
+## QUICK SUMMARY
+[5–7 Bullet Points mit den wichtigsten Fakten]
+
+## BOTTOM LINE
+[1 Satz: Was ist die klare Antwort / Empfehlung?]
+
+## QUELLE-HIGHLIGHTS
+[2–3 wichtige Quellen]`,
+
+      content: `Recherchiere zum Thema und erstelle Content-Ideen für Coach Cédi (Fitness-Coach auf Instagram/Social Media):
+
+## WAS DIE RECHERCHE ZEIGT
+[Wichtigste Fakten kurz zusammengefasst]
+
+## 5 CONTENT-IDEEN AUS DIESER RECHERCHE
+Für jede Idee:
+- **FORMAT:** Reel / Carousel / Caption
+- **HOOK:** [Starker Einstieg]
+- **KERNBOTSCHAFT:** [Was der Post vermittelt]
+
+## BEST PERFORMING ANGLE
+[Welche Perspektive würde am besten performen und warum]`,
+
+      compare: `Recherchiere zum Thema und erstelle einen strukturierten Vergleich:
+
+## ÜBERBLICK
+[Was wird verglichen und warum ist das relevant]
+
+## VERGLEICHS-TABELLE (Text-Format)
+[Strukturierter Vergleich der wichtigsten Punkte]
+
+## GEWINNER / EMPFEHLUNG
+[Klare Empfehlung für Coach Cédi und seine Klienten]
+
+## QUELLEN`
+    };
+
+    return `Du bist ein Research-Assistent für Coach Cédi – einen professionellen Fitness- und Life-Coach. Nutze die Web-Search um aktuelle, präzise Informationen zu finden.
+
+THEMA / FRAGE: ${query}${ctx}
+
+${typePrompts[reportType]}
+
+Wichtig:
+- Suche nach aktuellen Quellen (2023–2025 bevorzugt)
+- Antworte komplett auf Deutsch
+- Beziehe dich auf wissenschaftliche oder seriöse Quellen wo möglich
+- Halte die Informationen praxisrelevant für einen Fitness-Coach`;
+  }
+
+  async function startResearch() {
+    const query = document.getElementById('query').value.trim();
+    if (!query) { showError('Bitte gib ein Thema oder eine Frage ein.'); return; }
+
+    const btn = document.getElementById('researchBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    document.getElementById('errorBox').classList.remove('visible');
+    document.getElementById('outputSection').classList.remove('visible');
+    document.getElementById('reportContainer').innerHTML = '';
+
+    // Show progress
+    showProgress();
+
+    const reportType = getReportType();
+    const context = document.getElementById('context').value.trim();
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: buildPrompt(query, reportType, context) }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      lastReportText = text;
+
+      hideProgress();
+      renderReport(text, query);
+    } catch (err) {
+      hideProgress();
+      showError('Fehler: ' + err.message);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  let progressInterval;
+  function showProgress() {
+    const wrap = document.getElementById('progressWrap');
+    const bar = document.getElementById('progressBar');
+    const log = document.getElementById('statusLog');
+
+    wrap.classList.add('visible');
+    log.classList.add('visible');
+
+    const steps = [
+      { label: 'Web-Suche wird gestartet...', pct: 15 },
+      { label: 'Quellen werden analysiert...', pct: 35 },
+      { label: 'Informationen werden ausgewertet...', pct: 60 },
+      { label: 'Report wird zusammengestellt...', pct: 85 },
+    ];
+
+    let i = 0;
+    log.innerHTML = '';
+    bar.style.width = '5%';
+
+    progressInterval = setInterval(() => {
+      if (i < steps.length) {
+        const s = steps[i];
+        bar.style.width = s.pct + '%';
+        const item = document.createElement('div');
+        item.className = 'status-item';
+        item.innerHTML = `<div class="status-dot"></div><span>${s.label}</span>`;
+        log.appendChild(item);
+        if (i > 0) {
+          log.children[i - 1].querySelector('.status-dot').classList.add('done');
+        }
+        i++;
+      }
+    }, 1800);
+  }
+
+  function hideProgress() {
+    clearInterval(progressInterval);
+    document.getElementById('progressBar').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('progressWrap').classList.remove('visible');
+      document.getElementById('statusLog').classList.remove('visible');
+    }, 500);
+  }
+
+  function renderReport(text, query) {
+    document.getElementById('outputTitle').textContent = query.length > 50 ? query.substring(0, 50) + '...' : query;
+
+    const container = document.getElementById('reportContainer');
+    container.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'report-card';
+    card.innerHTML = `
+      <div class="report-card-header">
+        <div class="report-card-label">🔍 Research Report</div>
+        <button class="btn-ghost" onclick="copyReport()">Kopieren</button>
+      </div>
+      <div class="report-card-body" id="reportBody">${renderMarkdown(text)}</div>
+    `;
+    container.appendChild(card);
+
+    document.getElementById('outputSection').classList.add('visible');
+    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+      .replace(/KEY TAKEAWAY/g, '<div class="takeaway-label">🎯 Key Takeaway</div>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.classList.add('visible');
+  }
+
+  async function copyReport() {
+    await navigator.clipboard.writeText(lastReportText);
+    const btns = document.querySelectorAll('.btn-ghost');
+    btns.forEach(btn => {
+      if (btn.textContent === 'Kopieren') {
+        btn.textContent = '✓ Kopiert';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Kopieren'; btn.classList.remove('copied'); }, 2000);
+      }
+    });
+  }
+
+  function resetResearch() {
+    document.getElementById('outputSection').classList.remove('visible');
+    document.getElementById('query').value = '';
+    document.getElementById('context').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

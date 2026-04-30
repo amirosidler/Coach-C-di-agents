@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>Personality Agent · Coach Cédi</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #141414;
+    --card: #1a1a1a;
+    --card-hover: #1f1f1f;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --orange: #ff6b1a;
+    --orange-light: #ff8845;
+    --orange-dim: rgba(255,107,26,0.12);
+    --white: #f5f0e8;
+    --muted: #6b6560;
+    --muted-strong: #8a8580;
+    --green: #4caf7d;
+    --red: #e85d4a;
+    --yellow: #e8b84a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 200px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,26,0.08) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 48px 24px 60px;
+  }
+
+  /* Top nav */
+  .top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .back-link {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+
+  .back-link:hover { color: var(--orange); }
+
+  .agent-meta {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .agent-meta span { color: var(--orange); }
+
+  /* Header */
+  header {
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .agent-num-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    letter-spacing: 0.06em;
+    line-height: 0.95;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  h1 span { color: var(--orange); }
+
+  .agent-role-line {
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--orange);
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+
+  .intro {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #c8c3bc;
+    max-width: 640px;
+  }
+
+  .intro b { color: var(--white); font-weight: 500; }
+
+  /* Input block */
+  .input-block { margin-bottom: 40px; }
+
+  .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-strong);
+    margin-bottom: 12px;
+    display: block;
+    font-weight: 500;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 18px;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    resize: vertical;
+    min-height: 120px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--orange);
+    background: var(--card-hover);
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  /* Section */
+  .section { margin-bottom: 40px; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.14em;
+    color: var(--white);
+  }
+
+  .section-meta {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--orange);
+    font-weight: 500;
+  }
+
+  .section-desc {
+    font-size: 0.82rem;
+    color: var(--muted-strong);
+    margin-left: auto;
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+
+  /* Criteria grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .crit {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .crit::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border-strong);
+    transition: background 0.25s ease;
+  }
+
+  .crit:hover {
+    background: var(--card-hover);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+
+  .crit:hover::before { background: var(--orange); }
+
+  .crit.active {
+    background: var(--card-hover);
+    border-color: var(--orange);
+  }
+
+  .crit.active::before { background: var(--orange); width: 3px; }
+
+  .crit-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    min-width: 28px;
+    padding-top: 2px;
+    transition: color 0.2s;
+  }
+
+  .crit.active .crit-num { color: var(--orange); }
+
+  .crit-body { flex: 1; min-width: 0; }
+
+  .crit-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+
+  .crit-q {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--muted-strong);
+  }
+
+  .crit.active .crit-q { color: #c8c3bc; }
+
+  .crit-check {
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .crit.active .crit-check {
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+
+  .crit.active .crit-check::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 6px; height: 11px;
+    border: solid var(--black);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+  }
+
+  /* Actions */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  button.btn {
+    flex: 1;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  button.btn:hover {
+    background: var(--card-hover);
+    border-color: var(--border-strong);
+  }
+
+  button.btn.primary {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: var(--black);
+    font-weight: 700;
+  }
+
+  button.btn.primary:hover { background: var(--orange-light); border-color: var(--orange-light); }
+
+  /* Score bar — sticky bottom */
+  .score-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,10,0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 18px 24px max(18px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+
+  .score-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .score-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.4rem;
+    line-height: 0.85;
+    color: var(--orange);
+    min-width: 110px;
+    transition: color 0.3s;
+    letter-spacing: 0.04em;
+  }
+
+  .score-num.red { color: var(--red); }
+  .score-num.yellow { color: var(--yellow); }
+  .score-num.green { color: var(--green); }
+
+  .score-num small {
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+
+  .score-text { flex: 1; min-width: 0; }
+
+  .score-verdict {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    line-height: 1.1;
+    color: var(--white);
+  }
+
+  .score-tip {
+    font-size: 0.78rem;
+    color: var(--muted-strong);
+    line-height: 1.4;
+  }
+
+  .progress {
+    height: 2px;
+    background: var(--border);
+    overflow: hidden;
+    max-width: 1000px;
+    margin: 14px auto 0;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--orange);
+    width: 0%;
+    transition: width 0.4s cubic-bezier(0.2,0.9,0.3,1), background 0.3s;
+  }
+
+  .progress-fill.red { background: var(--red); }
+  .progress-fill.yellow { background: var(--yellow); }
+  .progress-fill.green { background: var(--green); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--orange);
+    color: var(--black);
+    padding: 12px 20px;
+    border-radius: 2px;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    transition: transform 0.3s cubic-bezier(0.2,0.9,0.3,1);
+    z-index: 200;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    .container { padding: 32px 18px 60px; }
+    h1 { font-size: 2.8rem; }
+    .grid { grid-template-columns: 1fr; }
+    .section-desc { display: none; }
+    .score-num { font-size: 2.6rem; min-width: 80px; }
+    .score-verdict { font-size: 1rem; }
+    .score-tip { font-size: 0.72rem; }
+    .actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-nav">
+    <a class="back-link" href="./coach-cedi-dashboard.html">← Mission Control</a>
+    <div class="agent-meta">Agent <span>08</span> · Marketing</div>
+  </div>
+
+  <header>
+    <div class="agent-num-big">08 / Marketing · Quality Gate</div>
+    <h1>Personality<br><span>Filter</span></h1>
+    <div class="agent-role-line">12-Punkt Brand &amp; Speaker Check</div>
+    <p class="intro">Jeder Post, jedes Reel, jede Story durchläuft <b>12 Kriterien nach Dieter Lange</b>. Sechs für die Art wie du sprichst, sechs für wer du als Coach Cédi bist. Score &lt; 8/12 = überarbeiten, bevor du veröffentlichst.</p>
+  </header>
+
+  <div class="input-block">
+    <label class="label" for="content">Was willst du posten?</label>
+    <textarea id="content" placeholder="Hook, Caption, Reel-Idee oder Story-Konzept hier reinwerfen…"></textarea>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-name">Speaker</div>
+      <div class="section-meta"><span id="speakerCount">0</span>/6</div>
+      <div class="section-desc">Wie du sprichst</div>
+    </div>
+    <div class="grid" id="speakerGrid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-name">Personality</div>
+      <div class="section-meta"><span id="personalityCount">0</span>/6</div>
+      <div class="section-desc">Wer du bist</div>
+    </div>
+    <div class="grid" id="personalityGrid"></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" id="resetBtn">Reset</button>
+    <button class="btn primary" id="copyBtn">Summary kopieren</button>
+  </div>
+
+</div>
+
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+<div class="score-bar">
+  <div class="score-inner">
+    <div class="score-num" id="scoreNum">0<small>/12</small></div>
+    <div class="score-text">
+      <div class="score-verdict" id="scoreVerdict">Noch nichts geprüft</div>
+      <div class="score-tip" id="scoreTip">Hak die Kriterien ab, die dein Content trifft.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Kopiert</div>
+
+<script>
+const speakerCriteria = [
+  { name: 'Surprise',          q: 'Sage ich was Unerwartetes? Etwas, das andere Coaches nicht sagen?' },
+  { name: 'Fascination',       q: 'Hat es Tiefe? Ein Insight, der fesselt statt nur informiert?' },
+  { name: 'Entertainment',     q: 'Macht es Spass beim Konsumieren? Reizüberfluteter Feed-Test bestanden?' },
+  { name: 'Engage',            q: 'Hole ich die Person aktiv rein? CTA, Frage, Pattern Interrupt?' },
+  { name: 'Challenge',         q: 'Stelle ich was in Frage? Mythos, Branche, Status quo?' },
+  { name: 'Loving Approach',   q: 'Geht es um IHN oder um mich? Care-First spürbar?' }
+];
+
+const personalityCriteria = [
+  { name: 'Präsenz',           q: 'Bin ich voll da? Kein halbgarer, lustloser Content?' },
+  { name: 'Authentizität',     q: 'Klingt das nach Cédi — oder nach generischem Fitness-Bro?' },
+  { name: 'Anziehungskraft',   q: 'Magnetisch UND geerdet? Nicht arrogant, nicht klein?' },
+  { name: 'Charisma',          q: 'Strahlt echte Energie? Nicht aufgesetzt, nicht trocken?' },
+  { name: 'Humor',             q: 'Innere Distanz spürbar? Kann ich über mich selbst lachen?' },
+  { name: 'Loving statt Angst',q: 'Aus Stärke gepostet — nicht aus Bedürfnis nach Likes?' }
+];
+
+const state = {
+  speaker: new Array(6).fill(false),
+  personality: new Array(6).fill(false)
+};
+
+function renderGrid(elId, criteria, group) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  criteria.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'crit' + (state[group][i] ? ' active' : '');
+    div.innerHTML = `
+      <div class="crit-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="crit-body">
+        <div class="crit-name">${c.name}</div>
+        <div class="crit-q">${c.q}</div>
+      </div>
+      <div class="crit-check"></div>
+    `;
+    div.addEventListener('click', () => {
+      state[group][i] = !state[group][i];
+      renderGrid(elId, criteria, group);
+      updateScore();
+    });
+    el.appendChild(div);
+  });
+}
+
+function updateScore() {
+  const speakerHits = state.speaker.filter(Boolean).length;
+  const personalityHits = state.personality.filter(Boolean).length;
+  const total = speakerHits + personalityHits;
+
+  document.getElementById('speakerCount').textContent = speakerHits;
+  document.getElementById('personalityCount').textContent = personalityHits;
+
+  const scoreEl = document.getElementById('scoreNum');
+  const verdictEl = document.getElementById('scoreVerdict');
+  const tipEl = document.getElementById('scoreTip');
+  const fillEl = document.getElementById('progressFill');
+
+  scoreEl.innerHTML = total + '<small>/12</small>';
+  fillEl.style.width = (total / 12 * 100) + '%';
+
+  scoreEl.className = 'score-num';
+  fillEl.className = 'progress-fill';
+
+  let verdict, tip, color;
+  if (total === 0) {
+    verdict = 'Noch nichts geprüft';
+    tip = 'Hak die Kriterien ab, die dein Content trifft.';
+    color = '';
+  } else if (total <= 4) {
+    verdict = 'Generisch — neu denken';
+    tip = 'Das geht im Feed unter. Surprise oder Challenge fehlt — schärfen.';
+    color = 'red';
+  } else if (total <= 7) {
+    verdict = 'Solide, nicht unforgettable';
+    tip = 'Brauchbar, aber nicht Coach Cédi Niveau. Was fehlt? Tiefe? Persönlichkeit?';
+    color = 'yellow';
+  } else if (total <= 9) {
+    verdict = 'Stark — ready zum Posten';
+    tip = 'Trifft die Marke. Letzter Check: packt der Hook in 2 Sekunden?';
+    color = 'green';
+  } else {
+    verdict = 'Coach Cédi Niveau — GO';
+    tip = 'Differenzierung pur. Genau das, was busy professionals fesselt.';
+    color = 'green';
+  }
+
+  verdictEl.textContent = verdict;
+  tipEl.textContent = tip;
+  if (color) { scoreEl.classList.add(color); fillEl.classList.add(color); }
+}
+
+function showToast(text) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state.speaker.fill(false);
+  state.personality.fill(false);
+  document.getElementById('content').value = '';
+  renderGrid('speakerGrid', speakerCriteria, 'speaker');
+  renderGrid('personalityGrid', personalityCriteria, 'personality');
+  updateScore();
+  showToast('Reset');
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const content = document.getElementById('content').value.trim();
+  const speakerHits = speakerCriteria.filter((_, i) => state.speaker[i]).map(c => c.name);
+  const personalityHits = personalityCriteria.filter((_, i) => state.personality[i]).map(c => c.name);
+  const total = speakerHits.length + personalityHits.length;
+  const verdict = document.getElementById('scoreVerdict').textContent;
+
+  const summary =
+`COACH CÉDI · PERSONALITY FILTER
+Score: ${total}/12 — ${verdict}
+
+CONTENT:
+${content || '(leer)'}
+
+Speaker (${speakerHits.length}/6): ${speakerHits.length ? speakerHits.join(', ') : '—'}
+Personality (${personalityHits.length}/6): ${personalityHits.length ? personalityHits.join(', ') : '—'}
+
+Datum: ${new Date().toLocaleDateString('de-CH')}`;
+
+  try {
+    await navigator.clipboard.writeText(summary);
+    showToast('Kopiert');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = summary;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Kopiert'); }
+    catch { showToast('Fehler'); }
+    document.body.removeChild(ta);
+  }
+});
+
+renderGrid('speakerGrid', speakerCriteria, 'speaker');
+renderGrid('personalityGrid', personalityCriteria, 'personality');
+updateScore();
+</script>
+</body>
+</html>
